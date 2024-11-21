@@ -1,5 +1,27 @@
+{% include 'parts/header.html.twig' %}
+<body>
 
-    <body>
-        {% block body %}{% endblock %}
-    </body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mt-2">
+                <h2>{{ app_title }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                {% block mainmenu %}
+                    {% include 'parts/mainmenu.html.twig' %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    {% block body %}{% endblock %}
+    {% block latejavascript %}{% endblock %}
+
+    {{ encore_entry_script_tags('app') }}
+
+</body>
 </html>
