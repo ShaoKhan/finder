@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mt-3">
+                <h1>Galerie</h1>
+                <p>Hier findest du alle öffentlichen Bilder.</p>
+
+                {% if images is empty %}
+                    <div class="alert alert-warning" role="alert">
+                        Es sind derzeit keine öffentlichen Bilder verfügbar.
+                    </div>
+                {% else %}
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+                        {% for image in images %}
+                            <div class="col">
+                                <div class="card">
+                                    <img
+                                            src="{{ asset('fundbilder/' ~ image.filePath) }}"
+                                            alt="{{ image.name }}"
+                                            class="card-img-top img-thumbnail gallery-image"
+                                            style="cursor: pointer;"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#imageModal"
+                                            data-image-src="{{ asset('fundbilder/' ~ image.filePath) }}">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ image.name }}</h5>
+                                        <p class="card-text">
+                                            Ort: {{ image.nearestTown ? image.nearestTown : 'Unbekannt' }}
+                                        </p>
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                Hochgeladen am: {{ image.createdAt|date('Y-m-d H:i') }}
+                                            </small>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Modal für vergrößerte Bilder -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="Vergrößertes Bild" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const modalImage = document.getElementById('modalImage');
+
+            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(img => {
+                img.addEventListener('click', function () {
+                    modalImage.src = this.getAttribute('data-image-src');
+                });
+            });
+        });
+    </script>
+{% endblock %}
