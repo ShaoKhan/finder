@@ -1,0 +1,122 @@
+{% extends 'base.html.twig' %}
+
+{% trans_default_domain 'founds' %}
+
+{% block body %}
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mt-3">
+                <h1 class="text-center mb-4">Image List</h1>
+
+                <!-- Suchformular -->
+                <form method="get" action="{{ path('image_list') }}" class="mb-4 d-flex">
+                    <input
+                            type="text"
+                            name="search"
+                            value="{{ app.request.query.get('search', '') }}"
+                            class="form-control me-2"
+                            placeholder="Suche nach Name, Ort oder Datum">
+                    <button type="submit" class="btn btn-primary">{{ 'search'|trans }}</button>
+                </form>
+
+                <!-- Sortierung -->
+                <div class="d-flex justify-content-between mb-4">
+                    <a href="{{ path('image_list', { sort: 'name', order: sort == 'name' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}" class="text-decoration-none">
+                        {{ 'filter.name'|trans }}
+                        {% if sort == 'name' %}
+                            {% if order == 'asc' %}
+                                <i class="bi bi-arrow-up"></i>
+                            {% else %}
+                                <i class="bi bi-arrow-down"></i>
+                            {% endif %}
+                        {% endif %}
+                    </a>
+                    <a href="{{ path('image_list', { sort: 'nearestTown', order: sort == 'nearestTown' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}" class="text-decoration-none">
+                        {{ 'filter.location'|trans }}
+                        {% if sort == 'nearestTown' %}
+                            {% if order == 'asc' %}
+                                <i class="bi bi-arrow-up"></i>
+                            {% else %}
+                                <i class="bi bi-arrow-down"></i>
+                            {% endif %}
+                        {% endif %}
+                    </a>
+                    <a href="{{ path('image_list', { sort: 'createdAt', order: sort == 'createdAt' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}" class="text-decoration-none">
+                        {{ 'filter.date'|trans }}
+                        {% if sort == 'createdAt' %}
+                            {% if order == 'asc' %}
+                                <i class="bi bi-arrow-up"></i>
+                            {% else %}
+                                <i class="bi bi-arrow-down"></i>
+                            {% endif %}
+                        {% endif %}
+                    </a>
+                </div>
+
+                <!-- Bild und Informationen in Zeilen -->
+                <div class="row g-2">
+                    {% for image in images %}
+                        <div class="col-12">
+                            <div class="row align-items-center border rounded p-1 h-100">
+                                <!-- Bild -->
+                                <div class="col-12 col-md-3 text-center">
+                                    <img
+                                            src="{{ asset('fundbilder/' ~ image.filePath) }}"
+                                            alt="{{ image.name }}"
+                                            class="img-fluid rounded"
+                                            style="max-height: 200px; object-fit: cover;">
+                                </div>
+
+                                <!-- Informationen -->
+                                <div class="col-12 col-md-5">
+                                    <p class="mb-1"><strong>{{ 'filter.name'|trans }}:</strong> {{ image.name }}</p>
+                                    <p class="mb-1"><strong>{{ 'filter.location'|trans }}:</strong> {{ image.nearestTown }}</p>
+                                    <p class="mb-1"><strong>{{ 'filter.utm'|trans }}:</strong> {{ image.utm|default('keine UTM Daten') }}</p>
+                                    <p class="mb-1"><strong>{{ 'filter.date'|trans }}:</strong> {{ image.createdAt|date('Y-m-d H:i') }}</p>
+                                </div>
+
+                                <!-- Karte -->
+                                <div class="col-12 col-md-4">
+                                    {% if image.hasCoordinates %}
+                                        <a
+                                                href="https://www.openstreetmap.org/?mlat={{ image.latitude }}&mlon={{ image.longitude }}#map=15/{{ image.latitude }}/{{ image.longitude }}"
+                                                target="_blank"
+                                                class="d-block">
+                                            <div id="map-{{ image.id }}" class="map-container w-100" style="height: 200px;"></div>
+                                        </a>
+                                        <script>
+                                            document.addEventListener("DOMContentLoaded", () => {
+                                                const map = L.map('map-{{ image.id }}', {
+                                                    attributionControl: false,
+                                                    zoomControl: false,
+                                                    dragging: false,
+                                                    scrollWheelZoom: false,
+                                                }).setView([{{ image.latitude }}, {{ image.longitude }}], 15);
+
+                                                // OpenStreetMap Tiles hinzufügen
+                                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                                }).addTo(map);
+
+                                                // Marker hinzufügen
+                                                L.marker([{{ image.latitude }}, {{ image.longitude }}])
+                                                    .addTo(map);
+                                            });
+                                        </script>
+                                    {% else %}
+                                        <p class="text-muted">{{ 'noCoords'|trans }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-center mt-4">
+                    {{ knp_pagination_render(pagination) }}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

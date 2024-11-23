@@ -1,0 +1,15 @@
+search: 'Suchen'
+noCoords: 'keine Koordinaten verfügbar'
+
+filter:
+  name: 'Name'
+  location: 'Ort'
+  date: 'Datum'
+  utm: 'UTM33'
+
+form:
+  choose_photo: 'Wähle ein Foto'
+  name: 'Bildname'
+  note: 'Notiz'
+  public: 'öffentlich sichtbar?'
+  save: 'Speichern'
