@@ -13,40 +13,33 @@
                 <li class="nav-item">
                     <a class="nav-link {% if app.request.attributes.get('_route') == 'index' %}active{% endif %}" aria-current="page" href="{{ path('index') }}">{{ 'home'|trans }}</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="{{ path('founds_index') }}">{{ 'fundmeldungen'|trans }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="/contact">{{ 'forum'|trans }}</a>
-                </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Dropdown
-                    </a>
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ 'fundmeldungen'|trans }}</a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="#">Action</a></li>
-                        <li><a class="dropdown-item" href="#">Another action</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">Something else here</a></li>
+                        <li><a class="dropdown-item" href="{{ path('photo_upload') }}">Bild hochladen</a></li>
+                        <li><a class="dropdown-item" href="{{ path('image_list') }}">Funde anzeigen</a></li>
                     </ul>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="/contact">{{ 'galerie'|trans }}</a>
+                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="{{ path('found_gallery') }}">{{ 'galerie'|trans }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="/contact">{{ 'chat'|trans }}</a>
+                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="#">{{ 'forum'|trans }} ?</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="#">{{ 'chat'|trans }} ?</a>
                 </li>
             </ul>
 
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="">Impressum</a>
+                    <a class="nav-link" href="">{{ 'imprint'|trans }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="">Datenschutz</a>
+                    <a class="nav-link" href="">{{ 'privacy_policy'|trans }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="">Kontakt</a>
+                    <a class="nav-link" href="">{{ 'contact'|trans }}</a>
                 </li>
             </ul>
         </div>
