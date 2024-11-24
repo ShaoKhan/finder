@@ -29,3 +29,4 @@ yarn-error.log
 
 ###< phpStorm ###
 .idea
+/public/fundbilder/
