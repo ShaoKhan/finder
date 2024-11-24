@@ -3,16 +3,18 @@ declare(strict_types = 1);
 
 namespace App\Service;
 
+use InvalidArgumentException;
 use proj4php\Point;
 use proj4php\Proj;
 use proj4php\Proj4php;
 
 class GeoService
 {
+    private array $wfsServices;
 
-    public function __construct()
+    public function __construct(array $wfsServices)
     {
-
+        $this->wfsServices = $wfsServices;
     }
 
     /**
@@ -88,15 +90,16 @@ EOT;
         try {
             $response = @file_get_contents($url);
 
-            if ($response === false) {
+            if($response === FALSE) {
                 throw new \Exception("Failed to fetch data from Overpass API.");
             }
 
-            $data = json_decode($response, true);
+            $data = json_decode($response, TRUE);
 
             // Ensure elements exist and return, otherwise return empty array
             return $data['elements'] ?? [];
-        } catch (\Exception $e) {
+        }
+        catch(\Exception $e) {
             // Log the error for debugging
             // error_log($e->getMessage());
             return []; // Return an empty array if the request fails
@@ -110,34 +113,35 @@ EOT;
         // Set the User-Agent header
         $options = [
             "http" => [
-                "header" => "User-Agent: MySymfonyApp/1.0 (myemail@example.com)\r\n"
-            ]
+                "header" => "User-Agent: MySymfonyApp/1.0 (myemail@example.com)\r\n",
+            ],
         ];
 
         // Create a stream context
         $context = stream_context_create($options);
 
         try {
-            $response = @file_get_contents($url, false, $context);
+            $response = @file_get_contents($url, FALSE, $context);
 
-            if ($response === false) {
+            if($response === FALSE) {
                 throw new \Exception("Failed to fetch data from Nominatim API.");
             }
 
-            $data = json_decode($response, true);
+            $data = json_decode($response, TRUE);
 
             // Check for 'address' and extract the nearest town, city, or village
             $nearestTown = $data['address']['town']
                            ?? $data['address']['city']
                               ?? $data['address']['village']
-                                 ?? null;
+                                 ?? NULL;
 
             return $nearestTown;
 
-        } catch (\Exception $e) {
+        }
+        catch(\Exception $e) {
             // Log the error for debugging
             // error_log($e->getMessage());
-            return null; // Return null if the request fails
+            return NULL; // Return null if the request fails
         }
     }
 
@@ -163,4 +167,43 @@ EOT;
         $c           = 2 * atan2(sqrt($a), sqrt(1 - $a));
         return $earthRadius * $c; // in km
     }
+
+    public function getGemarkungByUTM(float $utmX, float $utmY, string $state = 'brandenburg'): ?array
+    {
+        if (!isset($this->wfsServices[$state])) {
+            throw new InvalidArgumentException("Ungültiges Bundesland: $state");
+        }
+
+        $wfs = $this->wfsServices[$state];
+        $url = $wfs['url'];
+        $layer = $wfs['layer'];
+        $srs = $wfs['srs'];
+
+        $params = [
+            'SERVICE' => 'WFS',
+            'VERSION' => '2.0.0',
+            'REQUEST' => 'GetFeature',
+            'TYPENAME' => $layer,
+            'SRSNAME' => $srs,
+            'BBOX' => sprintf('%f,%f,%f,%f', $utmX, $utmY, $utmX, $utmY),
+            'OUTPUTFORMAT' => 'application/json',
+        ];
+        $response = file_get_contents($url . '?' . http_build_query($params));
+
+        if ($response === false) {
+            return null;
+        }
+        $data = json_decode($response, true);
+
+        if (!empty($data['features'])) {
+            $feature = $data['features'][0];
+            return [
+                'gemarkungsname' => $feature['properties']['Gemarkungsname'] ?? 'Unbekannt',
+                'gemarkungsnummer' => $feature['properties']['Gemarkungsnummer'] ?? 'Unbekannt',
+            ];
+        }
+
+        return null; // Keine Daten gefunden
+    }
+
 }

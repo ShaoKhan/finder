@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .image {
+            max-width: 300px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+<h1>Upload Report</h1>
+
+<table>
+    <tr>
+        <th>Name</th>
+        <td>{{ image.name }}</td>
+    </tr>
+    <tr>
+        <th>Nearest Town</th>
+        <td>{{ image.nearestTown }}</td>
+    </tr>
+    <tr>
+        <th>Upload Date</th>
+        <td>{{ image.createdAt|date('Y-m-d H:i') }}</td>
+    </tr>
+    <tr>
+        <th>Coordinates</th>
+        <td>
+            {% if image.latitude and image.longitude %}
+                {{ image.latitude }}, {{ image.longitude }}
+            {% else %}
+                N/A
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>Parcel</th>
+        <td>{{ image.parcel }}</td>
+    </tr>
+    <tr>
+        <th>District</th>
+        <td>{{ image.district }}</td>
+    </tr>
+</table>
+
+{% if image.filePath %}
+    <h2>Image</h2>
+    <img src="{{ absolute_url(asset('fundbilder/' ~ image.filePath)) }}" alt="{{ image.name }}" class="image">
+{% endif %}
+</body>
+</html>
