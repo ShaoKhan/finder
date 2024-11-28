@@ -10,11 +10,13 @@ use Doctrine\ORM\Mapping as ORM;
 class FoundsImage
 {
     #[ORM\Column(type: 'string', length: 255)]
-    public ?string            $filePath                 = NULL;
+    public ?string $filePath = NULL;
     #[ORM\Column(type: 'text', nullable: TRUE)]
-    public ?string            $note                     = NULL;
+    public ?string $note     = NULL;
     #[ORM\Column(type: 'string', length: 255)]
-    public ?string            $username                 = NULL;
+    public ?string $username = NULL;
+    #[ORM\Column(type: 'string', length: 255)]
+    public ?string            $user_uuid                = NULL;
     #[ORM\Column(type: 'datetime')]
     public \DateTimeInterface $createdAt;
     #[ORM\Column(type: 'decimal', precision: 20, scale: 8, nullable: TRUE)]
@@ -60,6 +62,9 @@ class FoundsImage
     #[ORM\Column(type: 'string', length: 255, nullable: TRUE)]
     private ?string           $name                     = NULL;
 
+    #[ORM\ManyToOne(inversedBy: 'foundsImages')]
+    private ?User $user = null;
+
     public function getName(): ?string
     {
         return $this->name;
@@ -82,6 +87,18 @@ class FoundsImage
 
     public function setNearestStreet(string $string)
     {
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
+
+        return $this;
     }
 
 }

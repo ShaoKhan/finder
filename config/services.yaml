@@ -6,6 +6,7 @@
 parameters:
   app.title: '%env(APP_TITLE)%'
   uploads_directory: '%kernel.project_dir%/public/fundbilder'
+  json_directory: '%kernel.project_dir%/public/json'
 
   wfs_services:
     brandenburg:

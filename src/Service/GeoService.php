@@ -3,7 +3,9 @@ declare(strict_types = 1);
 
 namespace App\Service;
 
-use InvalidArgumentException;
+use Exception;
+use Geometry;
+use geoPHP;
 use proj4php\Point;
 use proj4php\Proj;
 use proj4php\Proj4php;
@@ -44,7 +46,7 @@ class GeoService
      * @param float $longitude
      *
      * @return array|null
-     * @throws \Exception
+     * @throws Exception
      */
     public function getLocationData(float $latitude, float $longitude): ?array
     {
@@ -60,7 +62,7 @@ class GeoService
         $response = file_get_contents($url, FALSE, $context);
 
         if($response === FALSE) {
-            throw new \Exception("Failed to fetch data from Nominatim API.");
+            throw new Exception("Failed to fetch data from Nominatim API.");
         }
 
         return json_decode($response, TRUE);
@@ -74,7 +76,7 @@ class GeoService
      *
      * @return array
      */
-    public function findNearestChurch(float $latitude, float $longitude): array
+    public function findNearestChurch(float $latitude, float $longitude): ?array
     {
         $query = <<<EOT
 [out:json];
@@ -86,27 +88,36 @@ out center 1;
 EOT;
 
         $url = "https://overpass-api.de/api/interpreter?data=" . urlencode($query);
-
         try {
             $response = @file_get_contents($url);
 
             if($response === FALSE) {
-                throw new \Exception("Failed to fetch data from Overpass API.");
+                throw new Exception("Failed to fetch data from Overpass API.");
             }
-
             $data = json_decode($response, TRUE);
 
-            // Ensure elements exist and return, otherwise return empty array
-            return $data['elements'] ?? [];
+            if(!empty($data['elements'])) {
+                $nearest   = $data['elements'][0];
+                $name      = $nearest['tags']['name'] ?? 'Unknown Church';
+                $latitude  = $nearest['lat'] ?? NULL;
+                $longitude = $nearest['lon'] ?? NULL;
+
+                return [
+                    'name'      => $name,
+                    'latitude'  => $latitude,
+                    'longitude' => $longitude,
+                ];
+            }
+
+            return NULL;
         }
-        catch(\Exception $e) {
-            // Log the error for debugging
+        catch(Exception $e) {
             // error_log($e->getMessage());
-            return []; // Return an empty array if the request fails
+            return NULL;
         }
     }
 
-    public function getNearestTown(float $latitude, float $longitude): ?string
+    public function getNearestTown(float $latitude, float $longitude): ?array
     {
         $url = "https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude";
 
@@ -124,7 +135,7 @@ EOT;
             $response = @file_get_contents($url, FALSE, $context);
 
             if($response === FALSE) {
-                throw new \Exception("Failed to fetch data from Nominatim API.");
+                throw new Exception("Failed to fetch data from Nominatim API.");
             }
 
             $data = json_decode($response, TRUE);
@@ -135,10 +146,22 @@ EOT;
                               ?? $data['address']['village']
                                  ?? NULL;
 
-            return $nearestTown;
+            if(!$nearestTown) {
+                return NULL;
+            }
+
+            // Extract latitude and longitude of the place
+            $townLatitude  = $data['lat'] ?? NULL;
+            $townLongitude = $data['lon'] ?? NULL;
+
+            return [
+                'name'      => $nearestTown,
+                'latitude'  => (float)$townLatitude,
+                'longitude' => (float)$townLongitude,
+            ];
 
         }
-        catch(\Exception $e) {
+        catch(Exception $e) {
             // Log the error for debugging
             // error_log($e->getMessage());
             return NULL; // Return null if the request fails
@@ -149,8 +172,8 @@ EOT;
     /**
      * calculate distancces with haversine formula
      *
-     * @param float $lat1
-     * @param float $lon1
+     * @param float $lat1 //my location
+     * @param float $lon1 //my location
      * @param float $lat2
      * @param float $lon2
      *
@@ -158,52 +181,133 @@ EOT;
      */
     public function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
-        $earthRadius = 6371; // in km
+        $earthRadius = 6371;
         $dLat        = deg2rad($lat2 - $lat1);
         $dLon        = deg2rad($lon2 - $lon1);
         $a           = sin($dLat / 2) * sin($dLat / 2) +
                        cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
                        sin($dLon / 2) * sin($dLon / 2);
         $c           = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        return $earthRadius * $c; // in km
+        return $earthRadius * $c;
     }
 
-    public function getGemarkungByUTM(float $utmX, float $utmY, string $state = 'brandenburg'): ?array
+    public function getGemarkungByUTM(float $utmX, float $utmY): ?array
     {
-        if (!isset($this->wfsServices[$state])) {
-            throw new InvalidArgumentException("Ungültiges Bundesland: $state");
-        }
+        // Basis-URL der API
+        $baseUrl = "https://ogc-api.geobasis-bb.de/alkis-vereinfacht/v1/collections/katasterbezirk";
 
-        $wfs = $this->wfsServices[$state];
-        $url = $wfs['url'];
-        $layer = $wfs['layer'];
-        $srs = $wfs['srs'];
-
+        // API-Parameter (mit Filter für Punktabfrage)
         $params = [
-            'SERVICE' => 'WFS',
-            'VERSION' => '2.0.0',
-            'REQUEST' => 'GetFeature',
-            'TYPENAME' => $layer,
-            'SRSNAME' => $srs,
-            'BBOX' => sprintf('%f,%f,%f,%f', $utmX, $utmY, $utmX, $utmY),
-            'OUTPUTFORMAT' => 'application/json',
+            'f'      => 'json', // Rückgabeformat JSON
+            'filter' => "INTERSECTS(geometry,SRID=25833;POINT($utmX $utmY))", // Geometrie-Filter
         ];
-        $response = file_get_contents($url . '?' . http_build_query($params));
 
-        if ($response === false) {
-            return null;
+        // Erzeuge die URL mit den Parametern
+        $queryString = http_build_query($params);
+        $requestUrl  = "$baseUrl?$queryString";
+
+        echo $requestUrl;
+        try {
+            // API-Aufruf
+            $response = @file_get_contents($requestUrl);
+
+            if($response === FALSE) {
+                throw new Exception("Failed to fetch data from the Gemarkung API.");
+            }
+
+            // JSON-Daten dekodieren
+            $data = json_decode($response, TRUE);
+
+            // Prüfen, ob Features vorhanden sind
+            if(!empty($data['features'])) {
+                $feature    = $data['features'][0]; // Nimm das erste Feature
+                $properties = $feature['properties'];
+
+                // Extrahiere den Namen und die Nummer der Gemarkung
+                $gemarkungName   = $properties['gemarkungsname'] ?? NULL;
+                $gemarkungNummer = $properties['gemarkungsnummer'] ?? NULL;
+
+                return [
+                    'name'   => $gemarkungName,
+                    'number' => $gemarkungNummer,
+                ];
+            }
+
+            // Keine Features gefunden
+            return NULL;
         }
-        $data = json_decode($response, true);
-
-        if (!empty($data['features'])) {
-            $feature = $data['features'][0];
-            return [
-                'gemarkungsname' => $feature['properties']['Gemarkungsname'] ?? 'Unbekannt',
-                'gemarkungsnummer' => $feature['properties']['Gemarkungsnummer'] ?? 'Unbekannt',
-            ];
+        catch(Exception $e) {
+            // Fehlerprotokollierung (optional)
+            // error_log($e->getMessage());
+            return NULL;
         }
-
-        return null; // Keine Daten gefunden
     }
+
+    public function downloadGemarkungen(string $localFile): void
+    {
+        $url = "https://ogc-api.geobasis-bb.de/alkis-vereinfacht/v1/collections/katasterbezirk/items?f=json";
+        try {
+            $response = file_get_contents($url);
+            if($response === FALSE) {
+                throw new Exception("Failed to fetch data from the API.");
+            }
+
+            file_put_contents($localFile, $response);
+        }
+        catch(Exception $e) {
+            error_log($e->getMessage());
+        }
+    }
+
+    /**
+     * @throws exception
+     */
+    public function findGemarkung(float $latitude, float $longitude, string $localFile): ?array
+    {
+        $data = json_decode(file_get_contents($localFile), true);
+        foreach ($data['features'] as $feature) {
+            $geometryData = $feature['geometry'];
+
+            // Lade MultiPolygon
+            $geometry = geoPHP::load(json_encode($geometryData), 'json');
+            if (!$geometry instanceof Geometry) {
+                throw new \Exception("Invalid MultiPolygon geometry.");
+                continue;
+            }
+
+            // Lade Punkt
+            $pointWKT = "POINT($longitude $latitude)";
+            $point = geoPHP::load($pointWKT, 'wkt');
+            if (!$point instanceof Geometry) {
+                throw new \Exception("Failed to create Point geometry.");
+            }
+
+            // Prüfe Bounding Box
+            $boundingBox = $geometry->getBBox();
+            if ($longitude < $boundingBox['minx'] || $longitude > $boundingBox['maxx'] ||
+                $latitude < $boundingBox['miny'] || $latitude > $boundingBox['maxy']) {
+                echo "Point ($longitude, $latitude) is outside the bounding box:<br />";
+                echo "Bounding Box: MinX={$boundingBox['minx']}, MinY={$boundingBox['miny']}, MaxX={$boundingBox['maxx']}, MaxY={$boundingBox['maxy']}<br />";
+                continue;
+            }
+
+
+
+            // Prüfe, ob der Punkt im MultiPolygon liegt
+            if ($geometry->contains($point)) {
+                echo 'got points<br />';
+                $properties = $feature['properties'];
+
+                return [
+                    'name'   => $properties['gemarkungsname'] ?? null,
+                    'number' => $properties['gemarkungsnummer'] ?? null,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+
 
 }

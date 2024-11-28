@@ -8,4 +8,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController as SymfonyAbstr
 class FinderAbstractController extends SymfonyAbstractController
 {
     public function __construct() { }
+
+    public function getUserFullName():string
+    {
+        return $this->getUser() && $this->getUser()->vorname && $this->getUser()->nachname
+            ? $this->getUser()->vorname . ' ' . $this->getUser()->nachname
+            : 'anonymous';
+    }
+
 }
+

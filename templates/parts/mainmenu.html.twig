@@ -1,37 +1,57 @@
-{%  trans_default_domain 'mainmenu' %}
+{% trans_default_domain 'mainmenu' %}
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{{ path('index') }}">
-            <img src="{{ asset('build/images/logo-1_200x200.png') }}" title="Logo" class="navbar-logo"  alt="Finder Logo"/>
+        <a class="navbar-brand" href="{{ path('home') }}">
+            <img src="{{ asset('build/images/logo-1_200x200.png') }}" title="Logo" class="navbar-logo"
+                 alt="Finder Logo"/>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav fs-5">
-                <li class="nav-item">
-                    <a class="nav-link {% if app.request.attributes.get('_route') == 'index' %}active{% endif %}" aria-current="page" href="{{ path('index') }}">{{ 'home'|trans }}</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ 'fundmeldungen'|trans }}</a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{{ path('photo_upload') }}">Bild hochladen</a></li>
-                        <li><a class="dropdown-item" href="{{ path('image_list') }}">Funde anzeigen</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="{{ path('found_gallery') }}">{{ 'galerie'|trans }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="#">{{ 'forum'|trans }} ?</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="#">{{ 'chat'|trans }} ?</a>
-                </li>
-            </ul>
-
+            {% if app.user %}
+                <ul class="navbar-nav fs-5">
+                    <li class="nav-item">
+                        <a class="nav-link {% if app.request.attributes.get('_route') == 'index' %}active{% endif %}"
+                           aria-current="page" href="{{ path('home') }}">{{ 'home'|trans }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if app.request.attributes.get('_route') == 'hinweise' %}active{% endif %}"
+                           aria-current="page" href="{{ path('hinweise') }}">{{ 'hinweise'|trans }}</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle
+                         {% if app.request.attributes.get('_route') == 'photo_upload' or app.request.attributes.get('_route') == 'image_list' %} active {% endif %}" href="#" id="navbarDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">{{ 'fundmeldungen'|trans }}</a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li>
+                                <a class="dropdown-item {% if app.request.attributes.get('_route') == 'photo/upload' %}active{% endif %}"
+                                   href="{{ path('photo_upload') }}">Bild hochladen</a></li>
+                            <li><a class="dropdown-item" href="{{ path('image_list') }}">Funde anzeigen</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if app.request.attributes.get('_route') == 'found_gallery' %}active{% endif %}"
+                           href="{{ path('found_gallery') }}">{{ 'galerie'|trans }}</a>
+                    </li>
+                    <li class="nav-item">
+                        {# <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="https://forum.finder.nettronix.de" target="_blank">{{ 'forum'|trans }}</a> #}
+                        <a class="nav-link" href="https://finderforum.nettronix.de/" target="_blank" title="zum Forum">Forum</a>
+                    </li>
+                </ul>
+            {% endif %}
             <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    {% if app.user %}
+                        <a role="button" class="btn btn-primary btn-sm"
+                           href="{{ path('logout') }}">Logout</a>
+                    {% else %}
+                        <a role="button" class="btn btn-secondary btn-sm"
+                           href="{{ path('login') }}">Login</a>
+                    {% endif %}
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="">{{ 'imprint'|trans }}</a>
                 </li>

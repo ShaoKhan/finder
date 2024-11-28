@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <h2>Hinweise zur Benutzung</h2>
+                <h4 class="mt-3">Fehler / Bugs</h4>
+                <p>
+                    Das ganze hier is ein Entwicklungsprozess. Einerseits durch eure Ideen, andererseits durch die
+                    Umsetzung in der Programmierung.<br/>
+                    Es wird daher nicht ausbleiben, das es zu Fehlern kommt.<br/>
+                    Sollte es tatsächlich passieren, das ihr einen Fehler findet, bitte beschreibt diesen kurz <a
+                            href="https://finder.youtrack.cloud/agiles/177-2/current" target="_blank"
+                            title="Ticketsystem"><i class="bi bi-arrow-right"></i> hier <i class="bi bi-arrow-left"></i></a>
+                    in einem Ticket.
+                </p>
+
+                <h4 class="mt-3">Ideen</h4>
+                <p>
+                    Eure Ideen könnt ihr gerne jederzeit per WhatsApp in der Gruppe, per Mail oder Telefon
+                    loswerden.<br/>
+                    Damit die aber erhalten bleiben und nicht "hinten runter fallen", wäre es fantastisch, wenn ihr die
+                    <a href="https://finder.youtrack.cloud/agiles/177-2/current" target="_blank" title="Ticketsystem"><i
+                                class="bi bi-arrow-right"></i> hier <i class="bi bi-arrow-left"></i></a> niederschreibt.<br/>
+                    Eventuell ist auch hier eine Registrierung notwendig.
+                </p>
+
+                <h4 class="mt-3">(Fund-) Bilder upload</h4>
+                <p>
+                    Was passiert hier ?<br/>
+                    Als erstes einmal wird euer Bild hochgeladen auf den Server (der steht in Frankfurt M.)<br/>
+                    Dann werden die sog. EXIF Daten aus dem Bild ausgelesen. Das sind Meta-Informationen wie
+                    beispielsweise:<br/>
+                <ul>
+                    <li>Welche Kamera</li>
+                    <li>welche Blende usw.</li>
+                    <li>Wo wurde das Bild aufgenommen (Longitude und Latitude)</li>
+                </ul>
+                <br/>
+                Aus diesen Daten berechne ich als erstes die UTM33 Koordinaten<br/>
+                An eine externe Schnittstelle werden jetzt die GeoKoordinaten gesendet um herauszufinden:<br/>
+                <ul>
+                    <li>welches Bundesland</li>
+                    <li>welche Stadt ist in der Nähe</li>
+                    <li>welche Kirche ist in der Nähe</li>
+                    <li>wie weit sind diese weg vom ausgelesenen Standort</li>
+                </ul><br />
+                Was noch fehlt, ist das Ermitteln der Gemarkungen und der Flurstücke.<br />
+                Das ist machbar, aber etwas komplizierter, da hier bspw. jedes Bundesland eigene Datenformate zur Verfügung stellt.<br /><br />
+                Letztlich werden eure Bilder unter <strong>Fundmeldungen/Funde</strong> anzeigen aufgelistet. Hier aber nur eure eigenen, keine "fremden".<br />
+                Unter dem Menüpunkt <strong>Galerie</strong> findet ihr alle Bilder, die öffentlich gezeigt werden dürfen. Dazu gibt es beim Upload ein kleines Feld, in dem ihr ein Häkchen setzen könnt.
+                </p>
+
+                <h4>Was kommt noch?</h4>
+                <p>
+                    Ideen haben wir ja bereits im ersten Treffen gesammelt. Das würde ich auch gerne alles so umsetzen. Dauert nur etwas :)<br />
+                    Aufgrund der Wünsche wird es wohl passieren, das die Anwendung euch irgendwann fragt, ob ohr euren Standort teilen wollt.<br />
+                    Zum einen macht ihr das wahrscheinlich eh schon bei der ein oder anderen Anwendung / App ("Standort speichern" oder "Canota").<br />
+                    Nötig wird das, wenn ich eure Rechtecke berechnen soll, in denen ihr gelaufen seid.<br />
+                    Hier war der Wunsch nach einem "Start" und einem "Stop" Button. Anhand dieser Daten kann ich dann das Rechteck (!) in der Karte anzeigen.<br />
+                    <strong>Wichtig!</strong> Es wird ein Rechteck, kein Polygon. Dazu müsste ich euch tracken und das möchte ich eigentlich nicht.<br /><br />
+                    Als Nächstes wird wohl erst einmal die Fundmeldung als PDF und als Word Dokument fertig.<br />
+                    Im Anschluss dann das Hochladen mehrerer Bilder.<br />
+                    Auch das löschen muss noch mit rein ;)<br />
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

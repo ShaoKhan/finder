@@ -1,0 +1,5 @@
+loggedInAs: 'Du bist eingeloggt als: %email%'
+login: 'Login'
+pleaseLogIn: 'Bitte log dich ein'
+email: 'E-Mail'
+password: 'Passwort'
