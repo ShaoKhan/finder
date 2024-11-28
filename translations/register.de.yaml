@@ -1,0 +1,6 @@
+register: 'Registrieren'
+password: 'Passwort'
+agreeTerms: 'Bitte akzeptiere die Nutzungsbedingungen'
+passwordLength: 'Dein Passwort muss mindestens %limit% Zeichen lang sein'
+enterPassword: 'Bitte gib dein Passwort ein'
+mailRegistered: 'Diese Mail Adresse ist bereits registriert'

@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'login' %}
+{% block title %}{{ 'login'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mt-3">
+                {% if app.user %}
+                    <div class="mb-3">
+                        {{ 'loggedInAs'|trans({'%email%': app.user.userIdentifier }, 'login') }}
+                    </div>
+                {% else %}
+                    <form method="post">
+                        {% if error %}
+                            <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                        {% endif %}
+                        <h1 class="h3 mb-3 font-weight-normal">{{ 'pleaseLogIn'|trans }}</h1>
+                        <label for="username">{{ 'email'|trans }}</label>
+                        <input type="email" value="{{ last_username }}" name="_username" id="username" class="form-control"
+                               autocomplete="email" required autofocus>
+                        <label for="password">{{ 'password'|trans }}</label>
+                        <input type="password" name="_password" id="password" class="form-control"
+                               autocomplete="current-password" required>
+
+                        <input type="hidden" name="_csrf_token"
+                               value="{{ csrf_token('authenticate') }}"
+                        >
+                        <button class="btn btn-lg btn-primary mt-2" type="submit">
+                            {{'login'|trans}}
+                        </button>
+                    </form>
+                    <p class="mt-2">Noch nicht registriert ? <a href="{{ path('app_register') }}">Hier</a> dein Benutzerkonto anlegen</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

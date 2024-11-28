@@ -1,12 +1,16 @@
 search: 'Suchen'
 noCoords: 'keine Koordinaten verfügbar'
+noUTM: 'UTM Koordinaten konnten nicht berechnet werden'
+noLocation: 'keine Standort Daten gefunden'
+noFileUploaded: 'Die Datei konnte nicht hochgeladen werden'
 
 nearestTown: 'nächste Stadt'
 state: 'Bundesland'
 county: 'Landkreis'
 district: 'District'
 parcel: 'Gemarkung'
-
+next: 'am nächsten'
+photoUploadSuccess: 'Dein Bild wurde erfolgreich hochgeladen'
 
 filter:
   name: 'Bild-Name'
@@ -20,4 +24,4 @@ form:
   note: 'Notiz'
   public: 'öffentlich sichtbar?'
   save: 'Speichern'
-next: 'am nächsten'
+
