@@ -74,7 +74,7 @@ class GeoService
      * @param float $latitude
      * @param float $longitude
      *
-     * @return array
+     * @return array|null
      */
     public function findNearestChurch(float $latitude, float $longitude): ?array
     {
@@ -112,7 +112,6 @@ EOT;
             return NULL;
         }
         catch(Exception $e) {
-            // error_log($e->getMessage());
             return NULL;
         }
     }
@@ -162,9 +161,7 @@ EOT;
 
         }
         catch(Exception $e) {
-            // Log the error for debugging
-            // error_log($e->getMessage());
-            return NULL; // Return null if the request fails
+            return NULL;
         }
     }
 

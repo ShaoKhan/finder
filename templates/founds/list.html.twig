@@ -8,7 +8,6 @@
             <div class="col-12 mt-3">
                 <h1 class="text-center mb-4">Image List</h1>
 
-                <!-- Suchformular -->
                 <form method="get" action="{{ path('image_list') }}" class="mb-4 d-flex">
                     <input
                             type="text"
@@ -19,9 +18,9 @@
                     <button type="submit" class="btn btn-primary">{{ 'search'|trans }}</button>
                 </form>
 
-                <!-- Sortierung -->
                 <div class="d-flex justify-content-between mb-4">
-                    <a href="{{ path('image_list', { sort: 'name', order: sort == 'name' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}" class="text-decoration-none">
+                    <a href="{{ path('image_list', { sort: 'name', order: sort == 'name' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}"
+                       class="text-decoration-none">
                         {{ 'filter.name'|trans }}
                         {% if sort == 'name' %}
                             {% if order == 'asc' %}
@@ -31,7 +30,8 @@
                             {% endif %}
                         {% endif %}
                     </a>
-                    <a href="{{ path('image_list', { sort: 'nearestTown', order: sort == 'nearestTown' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}" class="text-decoration-none">
+                    <a href="{{ path('image_list', { sort: 'nearestTown', order: sort == 'nearestTown' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}"
+                       class="text-decoration-none">
                         {{ 'filter.location'|trans }}
                         {% if sort == 'nearestTown' %}
                             {% if order == 'asc' %}
@@ -41,7 +41,8 @@
                             {% endif %}
                         {% endif %}
                     </a>
-                    <a href="{{ path('image_list', { sort: 'createdAt', order: sort == 'createdAt' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}" class="text-decoration-none">
+                    <a href="{{ path('image_list', { sort: 'createdAt', order: sort == 'createdAt' and order == 'asc' ? 'desc' : 'asc', limit: limit }) }}"
+                       class="text-decoration-none">
                         {{ 'filter.date'|trans }}
                         {% if sort == 'createdAt' %}
                             {% if order == 'asc' %}
@@ -52,9 +53,16 @@
                         {% endif %}
                     </a>
                 </div>
-
-                <!-- Bild und Informationen in Zeilen -->
                 <div class="row g-2">
+
+                    {% for message in app.flashes('success') %}
+                        <div class="alert alert-success">{{ message }}</div>
+                    {% endfor %}
+
+                    {% for message in app.flashes('error') %}
+                        <div class="alert alert-danger">{{ message }}</div>
+                    {% endfor %}
+
                     {% for image in images %}
                         <div class="col-12">
                             <div class="row align-items-center border rounded p-1 h-100">
@@ -64,14 +72,15 @@
                                             src="{{ asset('fundbilder/' ~ image.filePath) }}"
                                             alt="{{ image.name }}"
                                             class="img-fluid rounded"
-                                            style="max-height: 200px; object-fit: cover;"><br />
+                                            style="max-height: 200px; object-fit: cover;"><br/>
                                     <div class="btn-group" role="group">
                                         <a href="{{ path('generate_pdf', { id: image.id }) }}"
                                            class="btn btn-primary btn-sm"
                                            target="_blank">
                                             Download als PDF
                                         </a>
-                                        <a href="{{ path('generate_word', { id: image.id }) }}" class="btn btn-secondary btn-sm">
+                                        <a href="{{ path('generate_word', { id: image.id }) }}"
+                                           class="btn btn-secondary btn-sm">
                                             Download als Word-Dokument
                                         </a>
                                     </div>
@@ -81,26 +90,40 @@
                                 <div class="col-12 col-md-5">
                                     <p class="mb-1"><strong>{{ 'filter.name'|trans }}:</strong> {{ image.name }}</p>
                                     <p class="mb-1">
-                                        <strong>{{ 'nearestTown'|trans }}:</strong> {{ image.nearestTown }}<br />
-                                        <strong>{{ 'state'|trans }}:</strong> {{ image.state }}<br />
-                                        <strong>{{ 'county'|trans }}:</strong> {{ image.county }}<br />
-                                        <strong>{{ 'district'|trans }}:</strong> {{ image.district }}<br />
-                                        <strong>{{ 'parcel'|trans }}:</strong> {{ image.parcel|default('nix') }}<br />
-                                        <strong>{{ 'next'|trans }}:</strong> {{ image.church_or_center_name|default('nix') }} in {{ image.distanceToChurchOrCenter|default('0') }} km
+                                        <strong>{{ 'nearestTown'|trans }}:</strong> {{ image.nearestTown }}<br/>
+                                        <strong>{{ 'state'|trans }}:</strong> {{ image.state }}<br/>
+                                        <strong>{{ 'county'|trans }}:</strong> {{ image.county }}<br/>
+                                        <strong>{{ 'district'|trans }}:</strong> {{ image.district }}<br/>
+                                        <strong>{{ 'parcel'|trans }}:</strong> {{ image.parcel|default('nix') }}<br/>
+                                        <strong>{{ 'next'|trans }}
+                                            :</strong> {{ image.church_or_center_name|default('nix') }}
+                                        in {{ image.distanceToChurchOrCenter|default('0') }} km
 
                                     </p>
-                                    <p class="mb-1"><strong>{{ 'filter.utm'|trans }}:</strong> {{ image.utm|default('keine UTM Daten') }}</p>
-                                    <p class="mb-1"><strong>{{ 'filter.date'|trans }}:</strong> {{ image.createdAt|date('Y-m-d H:i') }}</p>
+                                    <p class="mb-1"><strong>{{ 'filter.utm'|trans }}
+                                            :</strong> {{ image.utm|default('keine UTM Daten') }}</p>
+                                    <p class="mb-1"><strong>{{ 'filter.date'|trans }}
+                                            :</strong> {{ image.createdAt|date('Y-m-d H:i') }}</p>
                                 </div>
 
                                 <!-- Karte -->
                                 <div class="col-12 col-md-4">
+                                    <a href="#">
+                                        <i class="bi bi-trash3-fill float-end text-danger"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#deleteModal"
+                                           data-id="{{ image.id }}"
+                                           data-name="{{ image.name }}"
+                                           data-csrf="{{ image.csrf }}">
+                                        </i>
+                                    </a>
                                     {% if image.hasCoordinates %}
                                         <a
                                                 href="https://www.openstreetmap.org/?mlat={{ image.latitude }}&mlon={{ image.longitude }}#map=15/{{ image.latitude }}/{{ image.longitude }}"
                                                 target="_blank"
                                                 class="d-block">
-                                            <div id="map-{{ image.id }}" class="map-container w-100" style="height: 200px;"></div>
+                                            <div id="map-{{ image.id }}" class="map-container w-100"
+                                                 style="height: 200px;"></div>
                                         </a>
                                         <script>
                                             document.addEventListener("DOMContentLoaded", () => {
@@ -137,4 +160,47 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">{{ 'modal.confirmDeletion'|trans([], 'founds') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{ 'modal.areYouSure'|trans({'%name%': '<span id="modal-item-name"></span>'|raw}, 'founds') }}
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteForm" method="post" data-url-template="{{ path('found_delete', { id: 'REPLACE_ID' }) }}">
+                        <input type="hidden" name="_token" id="csrfToken" value="">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans([], 'founds') }}</button>
+                        <button type="submit" class="btn btn-danger">{{ 'modal.delete'|trans([], 'founds') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const deleteModal = document.getElementById('deleteModal');
+            const deleteForm = document.getElementById('deleteForm');
+            const modalItemName = document.getElementById('modal-item-name');
+
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const itemId = button.getAttribute('data-id');
+                const itemName = button.getAttribute('data-name');
+                const csrfToken = button.getAttribute('data-csrf');
+                const deleteUrl = deleteForm.getAttribute('data-url-template').replace('REPLACE_ID', itemId);
+
+                if (modalItemName) {
+                    modalItemName.textContent = itemName;
+                }
+                deleteForm.action = deleteUrl;
+                deleteForm.querySelector('#csrfToken').value = csrfToken;
+            });
+        });
+    </script>
 {% endblock %}

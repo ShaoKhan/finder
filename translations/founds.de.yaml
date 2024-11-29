@@ -3,7 +3,6 @@ noCoords: 'keine Koordinaten verfügbar'
 noUTM: 'UTM Koordinaten konnten nicht berechnet werden'
 noLocation: 'keine Standort Daten gefunden'
 noFileUploaded: 'Die Datei konnte nicht hochgeladen werden'
-
 nearestTown: 'nächste Stadt'
 state: 'Bundesland'
 county: 'Landkreis'
@@ -11,6 +10,14 @@ district: 'District'
 parcel: 'Gemarkung'
 next: 'am nächsten'
 photoUploadSuccess: 'Dein Bild wurde erfolgreich hochgeladen'
+noExifData: 'konnte keine Daten aus dem Bild extrahieren'
+noLongLat: 'keine Position (Long,Lat) gefunden'
+noLocationData: 'keine Positionsdaten'
+noUTM33Data: 'konnte UTM33 nicht berechnen.'
+noChurchFound: 'keine Kirche in der Nähe gefunden'
+noChurchOrTownFound: 'keine Kirche oder Stadt in der Nähe gefunden'
+noValidDistance: 'konnte keine Entfernung zu Stadt oder Kirche ermitteln'
+unknown: 'Unbekannt'
 
 filter:
   name: 'Bild-Name'
@@ -25,3 +32,13 @@ form:
   public: 'öffentlich sichtbar?'
   save: 'Speichern'
 
+modal:
+  confirmDeletion: 'Löschen bestätigen'
+  areYouSure: 'Du bist im Begriff die Fundmeldung sowie das Bild / die Bilder unwiderruflich zu löschen! Bist du sicher?'
+  cancel: 'Abbrechen'
+  delete: 'Löschen'
+
+delete:
+  foundNotFound: 'Die Fundmeldung konnte nicht gefunden werden ;)'
+  invalidCSRFToken: 'CSRF Token nicht valide'
+  success: 'Die Fundmeldung und dazugehörige Bilder wurde gelöscht.'

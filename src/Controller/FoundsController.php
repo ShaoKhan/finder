@@ -12,22 +12,24 @@ use App\Service\GeoService;
 use App\Service\ImageService;
 use App\Service\PdfService;
 use DateTime;
-use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use JetBrains\PhpStorm\NoReturn;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class FoundsController extends FinderAbstractController
 {
 
     public function __construct(
-        private readonly GeoService            $geoService,
-        private readonly ImageService          $imageService,
-        private readonly FoundsImageRepository $foundsImageRepository,
-        private readonly TranslatorInterface   $translator,
+        private readonly GeoService                $geoService,
+        private readonly ImageService              $imageService,
+        private readonly FoundsImageRepository     $foundsImageRepository,
+        private readonly TranslatorInterface       $translator,
+        private readonly CsrfTokenManagerInterface $csrfTokenManager,
     ) {
     }
 
@@ -39,13 +41,12 @@ class FoundsController extends FinderAbstractController
 
     #[Route('/photo/upload', name: 'photo_upload')]
     public function upload(
-        Request                $request,
-        EntityManagerInterface $em,
-        GeoService             $geoService,
-        FoundsImageRepository $foundsImageRepository,
+        Request    $request,
+        GeoService $geoService,
     ): Response {
-        $photo = new FoundsImage();
-        $form  = $this->createForm(FoundsImageUploadType::class, $photo);
+        $photo        = new FoundsImage();
+        $locationData = [];
+        $form         = $this->createForm(FoundsImageUploadType::class, $photo);
         $form->handleRequest($request);
 
         if($form->isSubmitted() && $form->isValid()) {
@@ -57,29 +58,34 @@ class FoundsController extends FinderAbstractController
                     throw new Exception($this->translator->trans('noFileUploaded', [], 'founds'));
                 }
 
-                // Verarbeite das hochgeladene Bild
                 $filePath = $this->handleFileUpload($uploadedFile);
                 $exifData = $this->imageService->extractExifData($filePath);
+                if($exifData === []) {
+                    $this->addFlash('error', $this->translator->trans('noExifData', [], 'founds'));
+                }
 
-                // Verarbeite EXIF-Daten
                 $latitude  = $exifData['latitude'] ?? 0.0;
                 $longitude = $exifData['longitude'] ?? 0.0;
 
                 if($latitude === 0.0 || $longitude === 0.0) {
-                    throw new Exception($this->translator->trans('noCoords', [], 'founds'));
+                    $this->addFlash('error', $this->translator->trans('noLongLat', [], 'founds'));
                 }
 
-                // Verarbeite Geo-Daten
-                $locationData = $this->getLocationData($geoService, $latitude, $longitude);
+                if($longitude > 0 && $latitude > 0) {
+                    $locationData = $this->getLocationData($geoService, $latitude, $longitude);
+                }
 
-                // UTM-Koordinaten berechnen
+                if($locationData === []) {
+                    $this->addFlash('error', $this->translator->trans('noLocationData', [], 'founds'));
+                }
+
                 $utmCoordinates = $geoService->convertToUTM33($latitude, $longitude);
+                if($utmCoordinates === []) {
+                    $this->addFlash('error', $this->translator->trans('noUTM33Data', [], 'founds'));
+                }
 
-                // Daten in die Entität speichern
                 $this->populatePhotoEntity($photo, $exifData, $locationData, $utmCoordinates, $filePath, $isPublic);
-
-                // Speichern
-                $foundsImageRepository->save($photo, true);
+                $this->foundsImageRepository->save($photo, TRUE);
 
 
                 $this->addFlash('success', $this->translator->trans('photoUploadSuccess', [], 'founds'));
@@ -119,7 +125,7 @@ class FoundsController extends FinderAbstractController
         }
     }
 
-    private function populatePhotoEntity(
+    #[NoReturn] private function populatePhotoEntity(
         FoundsImage $photo,
         array       $exifData,
         array       $locationData,
@@ -128,17 +134,36 @@ class FoundsController extends FinderAbstractController
         bool        $isPublic,
     ): void {
 
-        $latitude      = $exifData['latitude'] ?? 0.0;
-        $longitude     = $exifData['longitude'] ?? 0.0;
-        $nearestChurch = $this->geoService->findNearestChurch($latitude, $longitude);
-        $nearestTown   = $this->geoService->getNearestTown($latitude, $longitude);
+        $latitude       = $exifData['latitude'] ?? 0.0;
+        $longitude      = $exifData['longitude'] ?? 0.0;
+        $distanceChurch = NULL;
+        $distanceTown   = NULL;
+        $distance       = NULL;
+        $nearestChurch  = $this->geoService->findNearestChurch($latitude, $longitude);
+        $nearestTown    = $this->geoService->getNearestTown($latitude, $longitude);
 
-        if(!empty($nearestChurch)) {
-            $distance           = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
-            $churchOrCenterName = $nearestChurch['name'];
+        if($nearestChurch !== NULL) {
+            $distanceChurch     = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
+            $churchOrCenterName = 'Kirche: ' . $nearestChurch['name'];
+        } elseif($nearestTown !== NULL) {
+            $this->addFlash('notice', $this->translator->trans('noChurchFound', [], 'founds'));
+            $distanceTown       = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
+            $churchOrCenterName = 'Ort: ' . $nearestTown['name'];
         } else {
-            $distance           = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
-            $churchOrCenterName = $nearestTown['name'];
+            $this->addFlash('notice', $this->translator->trans('noChurchOrTownFound', [], 'founds'));
+            $churchOrCenterName = 'unknown';
+        }
+
+        if($distanceChurch !== NULL && $distanceTown !== NULL) {
+            $distance = min($distanceChurch, $distanceTown);
+        } elseif($distanceChurch !== NULL) {
+            $distance = $distanceChurch;
+        } elseif($distanceTown !== NULL) {
+            $distance = $distanceTown;
+        }
+
+        if($distance === NULL) {
+            $this->addFlash('error', $this->translator->trans('noValidDistance', [], 'founds'));
         }
 
         $photo->latitude                 = $latitude;
@@ -161,7 +186,7 @@ class FoundsController extends FinderAbstractController
         $photo->state                    = $locationData['address']['state'] ?? NULL;
         $photo->nearestStreet            = $locationData['address']['road'] ?? NULL;
         $photo->nearestTown              = $locationData['nearestTown'] ?? 'Unknown';
-        $photo->distanceToChurchOrCenter = $distance;
+        $photo->distanceToChurchOrCenter = $distance ?? NULL;
         $photo->churchOrCenterName       = $churchOrCenterName;
         $photo->setUser($this->getUser());
         $photo->user_uuid = $this->getUser()->getUuid();
@@ -176,15 +201,12 @@ class FoundsController extends FinderAbstractController
         PaginatorInterface    $paginator,
         FoundsImageRepository $foundsImageRepository,
     ): Response {
-        $sortField = $request->query->get('sort', 'name'); // Standard: Name
-        $sortOrder = $request->query->get('order', 'asc'); // Standard: Aufsteigend
-        $page      = $request->query->getInt('page', 1);   // Standard: Seite 1
-        $limit     = $request->query->getInt('limit', 10); // Standard: 10 Einträge pro Seite
-        $search    = $request->query->get('search', '');
-
-        $query = $foundsImageRepository->findAllFiltered($sortField, $sortOrder, $search, $this->getUser());
-
-        // Paginierung
+        $sortField  = $request->query->get('sort', 'name');
+        $sortOrder  = $request->query->get('order', 'asc');
+        $page       = $request->query->getInt('page', 1);
+        $limit      = $request->query->getInt('limit', 10);
+        $search     = $request->query->get('search', '');
+        $query      = $foundsImageRepository->findAllFiltered($sortField, $sortOrder, $search, $this->getUser());
         $pagination = $paginator->paginate(
             $query,
             $page,
@@ -212,8 +234,11 @@ class FoundsController extends FinderAbstractController
                 'utm'                      => ($image->utmY > 0.0 && $image->utmX > 0.0)
                     ? number_format($image->utmX, 2, '.', '') . ', ' . number_format($image->utmY, 2, '.', '')
                     : NULL,
+                'csrf' => $this->csrfTokenManager->getToken('delete' . $image->getId())
             ];
         }
+
+
 
         return $this->render('founds/list.html.twig', [
             'pagination' => $pagination,
@@ -279,6 +304,36 @@ class FoundsController extends FinderAbstractController
         $response->headers->set('Content-Disposition', 'attachment; filename="upload-report-' . $id . '.doc"');
 
         return $response;
+    }
+
+    #[Route('/found/{id}/delete', name: 'found_delete', methods: ['POST'])]
+    public function delete(
+        Request                   $request,
+        CsrfTokenManagerInterface $csrfTokenManager,
+        int                       $id,
+    ): Response {
+        $entity = $this->foundsImageRepository->find($id);
+
+        if(!$entity) {
+            $this->addFlash('error', $this->translator->trans('delete.foundNotFound', [], 'founds'));
+            return $this->redirectToRoute('image_list');
+        }
+
+        if(!$this->isCsrfTokenValid('delete' . $entity->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', $this->translator->trans('delete.invalidCSRFToken', [], 'founds'));
+            return $this->redirectToRoute('image_list');
+        }
+
+        $uploadDirectory = $this->getParameter('uploads_directory');
+        $filePath        = $uploadDirectory . '/' . $entity->filePath;
+        if(file_exists($filePath)) {
+            unlink($filePath);
+        }
+
+        $this->foundsImageRepository->remove($entity, TRUE);
+
+        $this->addFlash('success', $this->translator->trans('delete.success', [], 'founds'));
+        return $this->redirectToRoute('image_list');
     }
 
     /**
