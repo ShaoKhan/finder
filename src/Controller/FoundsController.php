@@ -44,6 +44,7 @@ class FoundsController extends FinderAbstractController
         Request    $request,
         GeoService $geoService,
     ): Response {
+        $this->denyAccessUnlessGranted('ROLE_USER');
         $photo        = new FoundsImage();
         $locationData = [];
         $form         = $this->createForm(FoundsImageUploadType::class, $photo);
@@ -201,6 +202,7 @@ class FoundsController extends FinderAbstractController
         PaginatorInterface    $paginator,
         FoundsImageRepository $foundsImageRepository,
     ): Response {
+        $this->denyAccessUnlessGranted('ROLE_USER');
         $sortField  = $request->query->get('sort', 'name');
         $sortOrder  = $request->query->get('order', 'asc');
         $page       = $request->query->getInt('page', 1);
@@ -234,10 +236,9 @@ class FoundsController extends FinderAbstractController
                 'utm'                      => ($image->utmY > 0.0 && $image->utmX > 0.0)
                     ? number_format($image->utmX, 2, '.', '') . ', ' . number_format($image->utmY, 2, '.', '')
                     : NULL,
-                'csrf' => $this->csrfTokenManager->getToken('delete' . $image->getId())
+                'csrf'                     => $this->csrfTokenManager->getToken('delete' . $image->getId()),
             ];
         }
-
 
 
         return $this->render('founds/list.html.twig', [
@@ -252,6 +253,7 @@ class FoundsController extends FinderAbstractController
     #[Route('founds/gallery', name: 'found_gallery')]
     public function galeryAction(): Response
     {
+        $this->denyAccessUnlessGranted('ROLE_USER');
         $photos = $this->foundsImageRepository->findBy(['isPublic' => TRUE]);
 
         return $this->render(
@@ -268,14 +270,14 @@ class FoundsController extends FinderAbstractController
         FoundsImageRepository $foundsImageRepository,
         PdfService            $pdfService,
     ): Response {
-        // Schritt 1: Datensatz anhand der ID abrufen
+
+        $this->denyAccessUnlessGranted('ROLE_USER');
         $image = $foundsImageRepository->find($id);
 
         if(!$image) {
             throw $this->createNotFoundException('Das Bild mit der angegebenen ID wurde nicht gefunden.');
         }
 
-        // Schritt 2: PDF generieren
         return $pdfService->generatePdf('pdf/upload_report.html.twig', [
             'image' => $image,
         ],                              sprintf('upload-report-%d.pdf', $id));
@@ -286,7 +288,8 @@ class FoundsController extends FinderAbstractController
         int                   $id,
         FoundsImageRepository $foundsImageRepository,
     ): Response {
-        // Daten für den spezifischen Upload abrufen
+        $this->denyAccessUnlessGranted('ROLE_USER');
+
         $image = $foundsImageRepository->find($id);
 
         if(!$image) {
@@ -312,6 +315,8 @@ class FoundsController extends FinderAbstractController
         CsrfTokenManagerInterface $csrfTokenManager,
         int                       $id,
     ): Response {
+        $this->denyAccessUnlessGranted('ROLE_USER');
+
         $entity = $this->foundsImageRepository->find($id);
 
         if(!$entity) {
