@@ -1,4 +1,4 @@
-# License Agreement for [PROJECT_NAME]
+# License Agreement for "Finder"
 
 ## Overview
 This license governs the use of the "Finder" software ("the Software"). By using or modifying the Software, you agree to the terms and conditions set forth below.
