@@ -10,6 +10,7 @@ district: 'District'
 parcel: 'Gemarkung'
 next: 'am nächsten'
 photoUploadSuccess: 'Dein Bild wurde erfolgreich hochgeladen'
+photosUploadSuccess: '%count% Bilder wurden erfolgreich hochgeladen'
 noExifData: 'konnte keine Daten aus dem Bild extrahieren'
 noLongLat: 'keine Position (Long,Lat) gefunden'
 noLocationData: 'keine Positionsdaten'
@@ -27,10 +28,13 @@ filter:
 
 form:
   choose_photo: 'Wähle ein Foto'
+  choose_photos: 'Wähle deine Fotos'
   name: 'Bildname'
   note: 'Notiz'
   public: 'öffentlich sichtbar?'
   save: 'Speichern'
+  noFilesUploaded: 'Es gibt hier nichts hochzuladen?'
+  imagesOnly: 'Bitte nur Bilder mit der Endung: JPEG oder PNG hochladen.'
 
 modal:
   confirmDeletion: 'Löschen bestätigen'

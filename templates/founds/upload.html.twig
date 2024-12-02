@@ -7,15 +7,18 @@
             <div class="col-12 mt-3">
                 <h1 class="mb-2">Upload Photo</h1>
                 {% for message in app.flashes('success') %}
-                    <div class="alert alert-success">{{ message }}</div>
+                    <div class="alert alert-success" role="alert">
+                        {{ message }}
+                    </div>
                 {% endfor %}
 
                 {% for message in app.flashes('error') %}
-                    <div class="alert alert-danger">{{ message }}</div>
+                    <div class="alert alert-danger" role="alert">
+                        {{ message|raw }}
+                    </div>
                 {% endfor %}
                 <p></p>
                 {{ form_start(form) }}
-                {{ form_row(form.file) }}
                 {{ form_end(form) }}
             </div>
         </div>
