@@ -41,60 +41,64 @@ class FoundsController extends FinderAbstractController
 
     #[Route('/photo/upload', name: 'photo_upload')]
     public function upload(
-        Request    $request,
+        Request $request,
         GeoService $geoService,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
-        $photo        = new FoundsImage();
         $locationData = [];
-        $form         = $this->createForm(FoundsImageUploadType::class, $photo);
+        $form = $this->createForm(FoundsImageUploadType::class);
+
         $form->handleRequest($request);
 
-        if($form->isSubmitted() && $form->isValid()) {
-            try {
-                $uploadedFile = $form->get('file')->getData();
-                $isPublic     = $form->get('isPublic')->getData();
+        if ($form->isSubmitted() && $form->isValid()) {
+            $uploadedFiles = $form->get('files')->getData();
+            $isPublic = $form->get('isPublic')->getData();
 
-                if(!$uploadedFile) {
-                    throw new Exception($this->translator->trans('noFileUploaded', [], 'founds'));
-                }
-
-                $filePath = $this->handleFileUpload($uploadedFile);
-                $exifData = $this->imageService->extractExifData($filePath);
-                if($exifData === []) {
-                    $this->addFlash('error', $this->translator->trans('noExifData', [], 'founds'));
-                }
-
-                $latitude  = $exifData['latitude'] ?? 0.0;
-                $longitude = $exifData['longitude'] ?? 0.0;
-
-                if($latitude === 0.0 || $longitude === 0.0) {
-                    $this->addFlash('error', $this->translator->trans('noLongLat', [], 'founds'));
-                }
-
-                if($longitude > 0 && $latitude > 0) {
-                    $locationData = $this->getLocationData($geoService, $latitude, $longitude);
-                }
-
-                if($locationData === []) {
-                    $this->addFlash('error', $this->translator->trans('noLocationData', [], 'founds'));
-                }
-
-                $utmCoordinates = $geoService->convertToUTM33($latitude, $longitude);
-                if($utmCoordinates === []) {
-                    $this->addFlash('error', $this->translator->trans('noUTM33Data', [], 'founds'));
-                }
-
-                $this->populatePhotoEntity($photo, $exifData, $locationData, $utmCoordinates, $filePath, $isPublic);
-                $this->foundsImageRepository->save($photo, TRUE);
-
-
-                $this->addFlash('success', $this->translator->trans('photoUploadSuccess', [], 'founds'));
+            if (!$uploadedFiles) {
+                $this->addFlash('error', $this->translator->trans('form.noFilesUploaded', [], 'founds'));
                 return $this->redirectToRoute('photo_upload');
             }
-            catch(Exception $e) {
-                $this->addFlash('error', $e->getMessage());
+
+            foreach ($uploadedFiles as $uploadedFile) {
+                try {
+                    $filePath = $this->handleFileUpload($uploadedFile);
+
+                    $exifData = $this->imageService->extractExifData($filePath);
+                    if ($exifData === []) {
+                        $this->addFlash('error', $this->translator->trans('noExifData', [], 'founds'));
+                    }
+
+                    $latitude = $exifData['latitude'] ?? 0.0;
+                    $longitude = $exifData['longitude'] ?? 0.0;
+
+                    if ($latitude === 0.0 || $longitude === 0.0) {
+                        $this->addFlash('error', $this->translator->trans('noLongLat', [], 'founds'));
+                    }
+
+                    if ($longitude > 0 && $latitude > 0) {
+                        $locationData = $this->getLocationData($geoService, $latitude, $longitude);
+                    }
+
+                    if ($locationData === []) {
+                        $this->addFlash('error', $this->translator->trans('noLocationData', [], 'founds'));
+                    }
+
+                    $utmCoordinates = $geoService->convertToUTM33($latitude, $longitude);
+                    if ($utmCoordinates === []) {
+                        $this->addFlash('error', $this->translator->trans('noUTM33Data', [], 'founds'));
+                    }
+
+                    $photo = new FoundsImage();
+                    $this->populatePhotoEntity($photo, $exifData, $locationData, $utmCoordinates, $filePath, $isPublic);
+
+                    $this->foundsImageRepository->save($photo, true);
+                } catch (Exception $e) {
+                    $this->addFlash('error', $e->getMessage());
+                }
             }
+
+            $this->addFlash('success', $this->translator->trans('photosUploadSuccess', [], 'founds'));
+            return $this->redirectToRoute('photo_upload');
         }
 
         return $this->render('founds/upload.html.twig', [

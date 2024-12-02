@@ -27,10 +27,13 @@ filter:
 
 form:
   choose_photo: 'Wähle ein Foto'
+  choose_photos: 'Wähle deine Fotos'
   name: 'Bildname'
   note: 'Notiz'
   public: 'öffentlich sichtbar?'
   save: 'Speichern'
+  noFilesUploaded: 'Es gibt hier nichts hochzuladen?'
+  imagesOnly: 'Bitte nur Bilder mit der Endung: JPEG oder PNG hochladen.'
 
 modal:
   confirmDeletion: 'Löschen bestätigen'
@@ -42,3 +45,4 @@ delete:
   foundNotFound: 'Die Fundmeldung konnte nicht gefunden werden ;)'
   invalidCSRFToken: 'CSRF Token nicht valide'
   success: 'Die Fundmeldung und dazugehörige Bilder wurde gelöscht.'
+

@@ -10,11 +10,11 @@ use Doctrine\ORM\Mapping as ORM;
 class FoundsImage
 {
     #[ORM\Column(type: 'string', length: 255)]
-    public ?string $filePath = NULL;
+    public ?string            $filePath                 = NULL;
     #[ORM\Column(type: 'text', nullable: TRUE)]
-    public ?string $note     = NULL;
+    public ?string            $note                     = NULL;
     #[ORM\Column(type: 'string', length: 255)]
-    public ?string $username = NULL;
+    public ?string            $username                 = NULL;
     #[ORM\Column(type: 'string', length: 255)]
     public ?string            $user_uuid                = NULL;
     #[ORM\Column(type: 'datetime')]
@@ -63,7 +63,7 @@ class FoundsImage
     private ?string           $name                     = NULL;
 
     #[ORM\ManyToOne(inversedBy: 'foundsImages')]
-    private ?User $user = null;
+    private ?User $user = NULL;
 
     public function getName(): ?string
     {
