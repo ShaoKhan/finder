@@ -31,6 +31,7 @@ class FoundsController extends FinderAbstractController
         private readonly TranslatorInterface       $translator,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
     ) {
+        parent::__construct();
     }
 
     #[Route('/founds/index', name: 'founds_index')]

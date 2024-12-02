@@ -10,6 +10,7 @@ district: 'District'
 parcel: 'Gemarkung'
 next: 'am nächsten'
 photoUploadSuccess: 'Dein Bild wurde erfolgreich hochgeladen'
+photosUploadSuccess: 'Deine Bilder wurden erfolgreich hochgeladen'
 noExifData: 'konnte keine Daten aus dem Bild extrahieren'
 noLongLat: 'keine Position (Long,Lat) gefunden'
 noLocationData: 'keine Positionsdaten'
@@ -45,4 +46,3 @@ delete:
   foundNotFound: 'Die Fundmeldung konnte nicht gefunden werden ;)'
   invalidCSRFToken: 'CSRF Token nicht valide'
   success: 'Die Fundmeldung und dazugehörige Bilder wurde gelöscht.'
-
