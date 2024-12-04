@@ -132,7 +132,6 @@ EOT;
 
         try {
             $response = @file_get_contents($url, FALSE, $context);
-
             if($response === FALSE) {
                 throw new Exception("Failed to fetch data from Nominatim API.");
             }
@@ -148,6 +147,8 @@ EOT;
             if(!$nearestTown) {
                 return NULL;
             }
+
+            #dd($data, $nearestTown);
 
             // Extract latitude and longitude of the place
             $townLatitude  = $data['lat'] ?? NULL;

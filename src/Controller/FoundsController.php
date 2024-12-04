@@ -91,12 +91,13 @@ class FoundsController extends FinderAbstractController
                     $utmCoordinates = $geoService->convertToUTM33($latitude, $longitude);
                     if($utmCoordinates === []) {
                         $errors[$fileName][] = $this->translator->trans('noUTM33Data', [], 'founds');
+                    } else {
+                        $this->addFlash('success', 'Converted lat: ' . $latitude . ', long: ' . $longitude . ' to utmX: ' . $utmCoordinates['utmX'] . ' and utmY: ' . $utmCoordinates["utmY"]);
                     }
 
 
                     $photo = new FoundsImage();
                     $this->populatePhotoEntity($photo, $exifData, $locationData, $utmCoordinates, $filePath, $isPublic);
-
                     $this->foundsImageRepository->save($photo, TRUE);
                     $successCount++;
 
@@ -163,30 +164,34 @@ class FoundsController extends FinderAbstractController
 
         $latitude       = $exifData['latitude'] ?? 0.0;
         $longitude      = $exifData['longitude'] ?? 0.0;
-        $distanceChurch = NULL;
-        $distanceTown   = NULL;
         $distance       = NULL;
+        $church         = NULL;
+        $town           = NULL;
         $nearestChurch  = $this->geoService->findNearestChurch($latitude, $longitude);
         $nearestTown    = $this->geoService->getNearestTown($latitude, $longitude);
 
+        $distanceChurch = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
+        $distanceTown   = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
+
         if($nearestChurch !== NULL) {
-            $distanceChurch     = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
-            $churchOrCenterName = 'Kirche: ' . $nearestChurch['name'];
-        } elseif($nearestTown !== NULL) {
-            $this->addFlash('notice', $this->translator->trans('noChurchFound', [], 'founds'));
-            $distanceTown       = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
-            $churchOrCenterName = 'Ort: ' . $nearestTown['name'];
-        } else {
-            $this->addFlash('notice', $this->translator->trans('noChurchOrTownFound', [], 'founds'));
-            $churchOrCenterName = 'unbekannt';
+            $distanceChurch = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
+            $church         = 'Kirche: ' . $nearestChurch['name'];
+        }
+        if($nearestTown !== NULL) {
+            $distanceTown = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
+            $town         = 'Ort: ' . $nearestTown['name'];
         }
 
-        if($distanceChurch !== NULL && $distanceTown !== NULL) {
-            $distance = min($distanceChurch, $distanceTown);
-        } elseif($distanceChurch !== NULL) {
-            $distance = $distanceChurch;
-        } elseif($distanceTown !== NULL) {
-            $distance = $distanceTown;
+
+        if($distanceChurch < $distanceTown) {
+            $churchOrCenterName = $church;
+            $distance           = $distanceChurch;
+        } elseif($distanceChurch > $distanceTown) {
+            $churchOrCenterName = $town;
+            $distance           = $distanceTown;
+        } else {
+            $churchOrCenterName = 'unbekannt';
+            $this->addFlash('error', $this->translator->trans('noChurchOrTownFound', [], 'founds'));
         }
 
         if($distance === NULL) {
@@ -212,8 +217,8 @@ class FoundsController extends FinderAbstractController
         $photo->county                   = $locationData['address']['county'] ?? NULL;
         $photo->state                    = $locationData['address']['state'] ?? NULL;
         $photo->nearestStreet            = $locationData['address']['road'] ?? NULL;
-        $photo->nearestTown              = $locationData['nearestTown'] ?? 'unbekannt';
-        $photo->distanceToChurchOrCenter = $distance ?? NULL;
+        $photo->nearestTown              = $town;
+        $photo->distanceToChurchOrCenter = $distance;
         $photo->churchOrCenterName       = $churchOrCenterName;
         $photo->setUser($this->getUser());
         $photo->user_uuid = $this->getUser()->getUuid();
@@ -229,6 +234,7 @@ class FoundsController extends FinderAbstractController
         FoundsImageRepository $foundsImageRepository,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
+
         $sortField  = $request->query->get('sort', 'name');
         $sortOrder  = $request->query->get('order', 'asc');
         $page       = $request->query->getInt('page', 1);

@@ -64,6 +64,7 @@ class FoundsImageUploadType extends AbstractType
                 'required' => FALSE,
                 'attr'     => [
                     'class' => 'form-control',
+                    'rows' => 5,
                 ],
             ])
             ->add('isPublic', CheckboxType::class, [

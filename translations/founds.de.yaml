@@ -31,7 +31,7 @@ form:
   choose_photos: 'Wähle deine Fotos'
   name: 'Bildname'
   note: 'Notiz'
-  public: 'öffentlich sichtbar?'
+  public: 'Öffentlich sichtbar? (Das Bild wird ohne Koordinaten o.ä. angezeigt)'
   save: 'Speichern'
   noFilesUploaded: 'Es gibt hier nichts hochzuladen?'
   imagesOnly: 'Bitte nur Bilder mit der Endung: JPEG oder PNG hochladen.'
