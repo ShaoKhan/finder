@@ -306,7 +306,8 @@ class FoundsController extends FinderAbstractController
 
         return $pdfService->generatePdf('pdf/upload_report.html.twig', [
             'image' => $image,
-        ],                              sprintf('upload-report-%d.pdf', $id));
+        ],
+                                        sprintf('Fundmeldung-%d-' . date('dmy') . '.pdf', $id));
     }
 
     #[Route('/generate-word/{id}', name: 'generate_word', methods: ['GET'])]
@@ -322,12 +323,10 @@ class FoundsController extends FinderAbstractController
             throw $this->createNotFoundException('Das Bild mit der angegebenen ID wurde nicht gefunden.');
         }
 
-        // HTML-Inhalt für Word
         $html = $this->renderView('word/upload_report.html.twig', [
             'image' => $image,
         ]);
 
-        // Header für Word-Dokument setzen
         $response = new Response($html);
         $response->headers->set('Content-Type', 'application/msword');
         $response->headers->set('Content-Disposition', 'attachment; filename="upload-report-' . $id . '.doc"');
