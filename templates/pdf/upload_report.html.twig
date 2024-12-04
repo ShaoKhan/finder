@@ -40,45 +40,522 @@
     </style>
 </head>
 <body>
-<h1>Fundmeldung</h1>
-
-<table>
+<table style="width: 100%;">
     <tr>
-        <th>Name</th>
-        <td>{{ image.name }}</td>
+        <td><img src="{{ asset('build/images/BRB-Adler.png') }}" width="50" height="50"/></td>
+        <td colspan="5">
+            <center><h1>Fundmeldung</h1></center>
+        </td>
     </tr>
     <tr>
-        <th>Nächster Ortskern / Kirche</th>
-        <td>{{ image.nearestTown }} in {{ image.distanceToChurchOrCenter }} km</td>
+        <td style="width: 25%;" colspan="3"></td>
+        <td style="width: 25%;"><strong>FM-Nr.:</strong></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
     </tr>
     <tr>
-        <th>Erstellt am:</th>
-        <td>{{ image.createdAt|date('d.m.Y H:i') }}</td>
+        <td style="width: 25%;"><strong>Gemarkung:</strong></td>
+        <td style="width: 25%;" colspan="2">{{ image.parcel|default('keine Angaben') }}</td>
+        <td style="width: 25%;">Akten-Nr.:</td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;" colspan="2"></td>
     </tr>
     <tr>
-        <th>Koordinaten</th>
-        <td>
-            {% if image.latitude and image.longitude %}
-                {{ image.utmX }}, {{ image.utmY }}<br />
-                ({{ image.latitude }}, {{ image.longitude }})
+        <td style="width: 25%;"><strong>Kreis:</strong></td>
+        <td style="width: 25%;" colspan="2">{{ image.state }}<br/>{{ image.county }}
+            <br/>{{ image.district|default('keine Angaben') }}</td>
+        <td style="width: 25%;" colspan="3"></td>
+    </tr>
+    <tr>
+        <td style="width: 33%">
+            <strong>
+                Flurname/<br/>
+                Flur/Flurstück/<br/>
+                Straße/HausNr.:
+            </strong>
+        </td>
+        <td colspan="5">{{ image.nearestStreet }}</td>
+    </tr>
+    <tr>
+        <td style="width: 16%"><strong>Koordinaten-<br/>Bezugssystem</strong></td>
+        <td style="width: 16%">UTM33<br/>EPSG:25833</td>
+        <td style="width: 16%">Rechts:</td>
+        <td style="width: 16%">
+            {% if image.longitude %}
+                {{ image.utmY }}<br/>
+                ({{ image.longitude }})
+            {% else %}
+                N/A
+            {% endif %}
+        </td>
+        <td style="width: 16%">bis:</td>
+        <td style="width: 16%">
+            {% if image.latitude %}
+                {{ image.utmX }}<br/>
+                ({{ image.latitude }})
             {% else %}
                 N/A
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th>Gemarkung</th>
-        <td>{{ image.parcel }}</td>
+        <td style="width:33%"></td>
+        <td></td>
+        <td>Hoch:</td>
+        <td></td>
+        <td>bis:</td>
+        <td></td>
     </tr>
     <tr>
-        <th>District</th>
-        <td>{{ image.district }}</td>
+        <td style="width:33%"><strong>Messtischblatt:</strong></td>
+        <td colspan="5"></td>
+    </tr>
+</table>
+<div class="mt-2"><strong>Art der Einmessung:</strong></div>
+<table>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">Schrittmaß</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">Bandmaß</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">digitale Kartengrundlage</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">Schätzung</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">Vermessungsgerät</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">Hand-GPS/Smartphone</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%" colspan="3"></td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Lage zum Ortskern:</strong> Ort: {{ image.nearestTown|default('') }} / {{ image.churchOrCenterName|default('') }}<br/>
+    (von Ortsmitte/Kirche zum Fundplatz)
+</div>
+
+<table style="width:20%; margin: 10px 0;">
+    <tr>
+        <td style="width: 2%"></td>
+        <td style="width:98%">im Ort</td>
+    </tr>
+</table>
+{{ image.distanceToChurchOrCenter }} km<br/>
+<table style="width: 50%; margin: 10px 0 10px 100px;">
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">nördlich</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">südlich</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">östlich</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">westlich</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">nordöstlich</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">südöstlich</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">südwestlich</td>
+        <td style="width:2%;"></td>
+        <td style="width:10.5%">nordwestlich</td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Lage im Gelände:</strong>
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width:3%;"></td>
+        <td style="width:30%">Höhenlage</td>
+        <td style="width:3%;"></td>
+        <td style="width:30%">Hang (abfallend nach...)</td>
+        <td style="width:3%;"></td>
+        <td style="width:30%"><strong>am</strong> See/Fluss …</td>
+    </tr>
+    <tr>
+        <td style="width:3%;"></td>
+        <td style="width:30%">Niederung</td>
+        <td style="width:3%;"></td>
+        <td style="width:30%">Ebene</td>
+        <td style="width:3%;"></td>
+        <td style="width:30%"><strong>im</strong> See/Fluss …</td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Geländenutzung:</strong>
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Straße, Weg, Platz</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Acker</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Garten</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Grube</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Wiese</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:18%">bebautes Grundstück</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Ödland</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Wald</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Moor</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Gewässer</td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Bodenart:</strong>
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Sand</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Lehm</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Ton</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Mergel</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Kies</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:18%">lehmiger Sand</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%">Torf</td>
+        <td style="width:2%;"></td>
+        <td style="width:18%"></td>
+        <td style="width:2%;"></td>
+        <td style="width:18%"></td>
+        <td style="width:2%;"></td>
+        <td style="width:18%"></td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Befundart:</strong>
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Oberflächenfunde</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Siedlung</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Technische Anlage</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Historische Stätte</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Körperbestattung</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Stadtkern, Dorfkern</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Wölbacker</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Hortfund</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Brandbestattung</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Kirche, Kloster, Hospital</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Wasserfahrzeug</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Münzfund</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Hügelgrab</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Burgwall</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Weg, Straße, Brücke</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Einzelfund</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Großsteingrab</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Turmhügel</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Schanze/Festung</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%"></td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Steinmal</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Landwehr</td>
+        <td style="width:2%;"></td>
+        <td colspan="3">Sonstiges:</td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Zeitstellung:</strong>
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">ältere Steinzeit</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Bronzezeit</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Völkerwanderungszeit</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Neuzeit</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">mittlere Steinzeit</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Eisenzeit</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Slawisches Mittelalter</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Urgeschichte</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">jüngere Steinzeit</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Kaiserzeit</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Deutsches Mittelalter</td>
+        <td style="width:2%;"></td>
+        <td style="width:23%">Ur- bis Frühgeschichte</td>
+    </tr>
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:23%">unbestimmt</td>
+        <td colspan="6"></td>
+    </tr>
+</table>
+
+<table style="width: 100%; border: 0;">
+    <tr>
+        <td style="width: 15%;">Kultur:</td>
+        <td style="width: 35%;"></td>
+        <td style="width: 15%;">Gruppe:</td>
+        <td style="width: 35%;"></td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Auffindungsart:</strong>
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width:2%;"></td>
+        <td style="width:14%">Notbergung</td>
+        <td style="width:2%;"></td>
+        <td style="width:14%">Zufallsfund</td>
+        <td style="width:2%;"></td>
+        <td style="width:14%;">(Flur-)<br/>Begehung</td>
+        <td style="width:2%;"></td>
+        <td style="width:14%">Sonde / techn. Hilfsmittel</td>
+        <td style="width:2%;"></td>
+        <td style="width:14%">Luftbild</td>
+        <td style="width:2%;"></td>
+        <td style="width:14%">Publikation</td>
+    </tr>
+</table>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width: 30%;"><strong>Erhaltungszustand der Funde:</strong></td>
+        <td></td>
+    </tr>
+</table>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width: 50%;">Ausgrabung oder Besichtigung notwendig?</td>
+        <td style="width: 2%;"></td>
+        <td style="width: 23%;">Ja</td>
+        <td style="width: 2%;"></td>
+        <td style="width: 23%;">Nein</td>
+    </tr>
+</table>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width: 25%;">besichtigt am:</td>
+        <td style="width: 25%;">{{ image.createdAt|date('d.m.Y') }}</td>
+        <td style="width: 25%;">geborgen am:</td>
+        <td style="width: 25%;">{{ image.createdAt|date('d.m.Y') }}</td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Skizze des Fundplatzes / Kartenausschnitt / Screenshot (ggf. als separater Anhang):</strong>
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td></td>
+    </tr>
+</table>
+
+
+<div class="mt-2">
+    <strong>Beschreibung der Funde</strong> (ggf. als Tabelle im Excel-Format) / <strong>Zeichnung</strong> / <strong>Digitalfoto:</strong>
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <th style="width: 3%;">Nr.</th>
+        <th style="width: 3%;">Anzahl</th>
+        <th style="width: 15%;">Material</th>
+        <th style="width: 20%;">Objekt(e)</th>
+        <th style="width: 15%;">Datierung</th>
+        <th style="width: 15%;">Rechtswert</th>
+        <th style="width: 15%;">Hochwert</th>
+    </tr>
+    {% for i in 1..8 %}
+        <tr>
+            <td style="width: 3%;">{{ i }}</td>
+            <td style="width: 3%;"></td>
+            <td style="width: 15%;"></td>
+            <td style="width: 20%;"></td>
+            <td style="width: 15%;"></td>
+            <td style="width: 15%;"></td>
+            <td style="width: 15%;"></td>
+        </tr>
+    {% endfor %}
+</table>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width: 30%;">Lage und Anordnung der Funde:</td>
+        <td style="width: 25%;"></td>
+        <td style="width: 10%;">Tiefe:</td>
+        <td style="width: 10%;"></td>
+    </tr>
+</table>
+
+<div class="mt-2">
+    <strong>Literatur:</strong>
+    {% for i in 1..10 %}
+        <p></p>
+    {% endfor %}
+</div>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width: 25%;"><strong>gefunden durch:</strong></td>
+        <td style="width: 25%;">Name:</td>
+        <td style="width: 25%;"></td>
+        <td style="width: 25%;">Datum der Auffindung:</td>
+    </tr>
+    <tr>
+        <td style="width: 25%;"></td>
+        <td style="width: 25%;">Anschrift:</td>
+        <td style="width: 25%;"></td>
+        <td style="width: 25%;">{{ image.createdAt|date('d.m.Y') }}</td>
+    </tr>
+</table>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width: 20%;">sichergestellt durch:</td>
+        <td style="width: 35%;"></td>
+        <td style="width: 10%;">am:</td>
+        <td style="width: 20%;">{{ image.createdAt|date('d.m.Y') }}</td>
+    </tr>
+    <tr>
+        <td style="width: 20%;">derzeitiger Verbleib:</td>
+        <td style="width: 35%;" colspan="3"></td>
+    </tr>
+    <tr>
+        <td style="width: 20%;">besondere Bemerkungen:</td>
+        <td style="width: 35%; height: 100px;" colspan="3"></td>
+    </tr>
+</table>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width: 30%;">Ort:</td>
+        <td style="width: 30%;">Datum:</td>
+        <td style="width: 40%;">Name/Unterschrift der meldenden Person:</td>
+    </tr>
+    <tr>
+        <td style="width: 30%;"></td>
+        <td style="width: 30%;"></td>
+        <td style="width: 40%;"></td>
+    </tr>
+</table>
+
+<p style="font-size: 10px;">
+    Hinweis: Ihre Daten werden vom Brandenburgischen Landesamt für Denkmalpflege und Archäologischen Landesmuseum ausschließlich zur Erfüllung seiner gesetzlichen Aufgaben in einer elektronischen Datenverarbeitungsanlage unter Beachtung des Datenschutzrechtes gespeichert und weiterverarbeitet.
+</p>
+
+<table style="width: 100%; margin: 10px 0;">
+    <tr>
+        <td style="width: 10%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;">Kenntnis genommen/bearbeitet am:</td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;">Name/Unterschrift:</td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+    </tr>
+    <tr>
+        <td style="width: 10%; background: lightgrey;border: 1px solid #000000;">Gebietsreferat:</td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+    </tr>
+    <tr>
+        <td style="width: 10%; background: lightgrey;border: 1px solid #000000;">Ortsarchiv:</td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+    </tr>
+    <tr>
+        <td style="width: 10%; background: lightgrey;border: 1px solid #000000;">Sammlung:<br />Fundeingang:</td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;"></td>
+    </tr>
+    <tr>
+        <td style="width: 10%; background: lightgrey;border: 1px solid #000000;">Besondere Bemerkungen:</td>
+        <td style="width: 25%; background: lightgrey;border: 1px solid #000000;" colspan="4"></td>
     </tr>
 </table>
 
 {% if image.filePath %}
-    <h2>Bild</h2>
-    <img src="{{ absolute_url(asset('fundbilder/' ~ image.filePath)) }}" alt="{{ image.name }}" class="image">
+    <h3>{{ image.filePath }}</h3>
+    <img src="{{ absolute_url(asset('build/fundbilder/' ~ image.filePath)) }}" alt="{{ image.name }}" class="image"/>
 {% endif %}
 </body>
 </html>
