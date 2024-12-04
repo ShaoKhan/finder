@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Service;
 
@@ -23,30 +23,22 @@ class PdfService
         // Schritt 1: Dompdf konfigurieren
         $pdfOptions = new Options();
         $pdfOptions->set('defaultFont', 'Arial');
-        $pdfOptions->set('isHtml5ParserEnabled', true);
-        $pdfOptions->set('isRemoteEnabled', true);
+        $pdfOptions->set('isHtml5ParserEnabled', TRUE);
+        $pdfOptions->set('isRemoteEnabled', TRUE);
 
         $dompdf = new Dompdf($pdfOptions);
-
-        // Schritt 2: HTML aus dem Twig-Template rendern
-        $html = $this->twig->render($template, $data);
-
+        $html   = $this->twig->render($template, $data);
         $dompdf->loadHtml($html);
-
-        // Schritt 3: Seitengröße und Orientierung einstellen
         $dompdf->setPaper('A4', 'portrait');
-
-        // Schritt 4: PDF generieren
         $dompdf->render();
 
-        // Schritt 5: PDF als Response zurückgeben
         return new Response(
             $dompdf->output(),
             200,
             [
-                'Content-Type' => 'application/pdf',
+                'Content-Type'        => 'application/pdf',
                 'Content-Disposition' => 'inline; filename="' . $filename . '"',
-            ]
+            ],
         );
     }
 }
