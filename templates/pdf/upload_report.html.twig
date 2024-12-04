@@ -555,7 +555,7 @@
 
 {% if image.filePath %}
     <h3>{{ image.filePath }}</h3>
-    <img src="{{ absolute_url(asset('build/fundbilder/' ~ image.filePath)) }}" alt="{{ image.name }}" class="image"/>
+    <img src="{{ absolute_url(asset('fundbilder/' ~ image.filePath)) }}" alt="{{ image.name }}" class="image"/>
 {% endif %}
 </body>
 </html>
