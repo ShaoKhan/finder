@@ -344,6 +344,7 @@ class FoundsController extends FinderAbstractController
         $photo->distanceToChurchOrCenter = $distance;
         $photo->churchOrCenterName       = $churchOrCenterName;
         $photo->setUser($this->getUser());
+        $photo->user_uuid = $this->getUser()->getUuid();
         $photo->isPublic  = $isPublic;
 
     }
