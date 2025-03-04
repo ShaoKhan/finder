@@ -81,4 +81,16 @@ class FoundsImageRepository extends ServiceEntityRepository
 
         return $qb->getQuery();
     }
+
+    public function findByDateRange(\DateTime $startDate, \DateTime $endDate): array
+    {
+        return $this->createQueryBuilder('f')
+            ->andWhere('f.createdAt >= :startDate')
+            ->andWhere('f.createdAt <= :endDate')
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->orderBy('f.createdAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

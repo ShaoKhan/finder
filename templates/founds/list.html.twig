@@ -6,7 +6,7 @@
     <div class="container">
         <div class="row">
             <div class="col-12 mt-3">
-                <h1 class="text-center mb-4">Image List</h1>
+                <h1 class="text-center mb-4">{{ 'Fundmeldungen'|trans }}</h1>
 
                 <form method="get" action="{{ path('image_list') }}" class="mb-4 d-flex">
                     <input
@@ -53,19 +53,34 @@
                         {% endif %}
                     </a>
                 </div>
-                <div class="row g-2">
 
-                    {% for message in app.flashes('success') %}
-                        <div class="alert alert-success">{{ message }}</div>
-                    {% endfor %}
+                {% for message in app.flashes('success') %}
+                    <div class="alert alert-success">{{ message }}</div>
+                {% endfor %}
 
-                    {% for message in app.flashes('error') %}
-                        <div class="alert alert-danger">{{ message }}</div>
-                    {% endfor %}
+                {% for message in app.flashes('error') %}
+                    <div class="alert alert-danger">{{ message }}</div>
+                {% endfor %}
 
-                    {% for image in images %}
-                        <div class="col-12">
-                            <div class="row align-items-center border rounded p-1 h-100">
+                {% for dateKey, group in groupedImages %}
+                    <div class="date-group mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="date-header mb-3">{{ group.date|date('d.m.Y') }}</h3>
+                            <div>
+                                <a href="{{ path('generate_pdf', { date: group.date|date('Y-m-d') }) }}"
+                                   class="btn btn-primary btn-sm"
+                                   target="_blank">
+                                    Download als PDF
+                                </a>
+                                <a href="{{ path('generate_word', { date: group.date|date('Y-m-d') }) }}"
+                                   class="btn btn-secondary btn-sm">
+                                    Download als Word-Dokument
+                                </a>
+                            </div>
+                        </div>
+                        
+                        {% for image in group.images %}
+                            <div class="row align-items-center border rounded p-1 mb-2 h-100">
                                 <!-- Bild -->
                                 <div class="col-12 col-md-3 text-center">
                                     <img
@@ -73,17 +88,6 @@
                                             alt="{{ image.name }}"
                                             class="img-fluid rounded"
                                             style="max-height: 200px; object-fit: cover;"><br/>
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ path('generate_pdf', { id: image.id }) }}"
-                                           class="btn btn-primary btn-sm"
-                                           target="_blank">
-                                            Download als PDF
-                                        </a>
-                                        <a href="{{ path('generate_word', { id: image.id }) }}"
-                                           class="btn btn-secondary btn-sm">
-                                            Download als Word-Dokument
-                                        </a>
-                                    </div>
                                 </div>
 
                                 <!-- Informationen -->
@@ -94,15 +98,11 @@
                                         <strong>{{ 'county'|trans }}:</strong> {{ image.county }}<br/>
                                         <strong>{{ 'district'|trans }}:</strong> {{ image.district }}<br/>
                                         <strong>{{ 'parcel'|trans }}:</strong> {{ image.parcel|default('nix') }}<br/>
-                                        <strong>{{ 'next'|trans }}
-                                            :</strong> {{ image.church_or_center_name }}
+                                        <strong>{{ 'next'|trans }}:</strong> {{ image.church_or_center_name }}
                                         in {{ image.distanceToChurchOrCenter|default('0') }} km
-
                                     </p>
-                                    <p class="mb-1"><strong>{{ 'filter.utm'|trans }}
-                                            :</strong> {{ image.utm|default('keine UTM Daten') }}</p>
-                                    <p class="mb-1"><strong>{{ 'filter.date'|trans }}
-                                            :</strong> {{ image.createdAt|date('Y-m-d H:i') }}</p>
+                                    <p class="mb-1"><strong>{{ 'filter.utm'|trans }}:</strong> {{ image.utm|default('keine UTM Daten') }}</p>
+                                    <p class="mb-1"><strong>{{ 'filter.date'|trans }}:</strong> {{ image.createdAt|date('Y-m-d H:i') }}</p>
                                 </div>
 
                                 <!-- Karte -->
@@ -133,12 +133,10 @@
                                                     scrollWheelZoom: false,
                                                 }).setView([{{ image.latitude }}, {{ image.longitude }}], 15);
 
-                                                // OpenStreetMap Tiles hinzufügen
                                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                                 }).addTo(map);
 
-                                                // Marker hinzufügen
                                                 L.marker([{{ image.latitude }}, {{ image.longitude }}])
                                                     .addTo(map);
                                             });
@@ -148,9 +146,9 @@
                                     {% endif %}
                                 </div>
                             </div>
-                        </div>
-                    {% endfor %}
-                </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
 
                 <!-- Pagination -->
                 <div class="d-flex justify-content-center mt-4">
@@ -159,28 +157,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">{{ 'modal.confirmDeletion'|trans([], 'founds') }}</h5>
+                    <h5 class="modal-title" id="deleteModalLabel">{{ 'modal.confirmDeletion'|trans }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    {{ 'modal.areYouSure'|trans({'%name%': '<span id="modal-item-name"></span>'|raw}, 'founds') }}
+                    {{ 'modal.areYouSure'|trans({'%name%': '<span id="modal-item-name"></span>'|raw}) }}
                 </div>
                 <div class="modal-footer">
                     <form id="deleteForm" method="post" data-url-template="{{ path('found_delete', { id: 'REPLACE_ID' }) }}">
                         <input type="hidden" name="_token" id="csrfToken" value="">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans([], 'founds') }}</button>
-                        <button type="submit" class="btn btn-danger">{{ 'modal.delete'|trans([], 'founds') }}</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans }}</button>
+                        <button type="submit" class="btn btn-danger">{{ 'modal.delete'|trans }}</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .date-header {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5rem;
+            color: #007bff;
+            margin-top: 2rem;
+        }
+        .date-group:first-child .date-header {
+            margin-top: 0;
+        }
+    </style>
+{% endblock %}
 
+{% block javascripts %}
+    {{ parent() }}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const deleteModal = document.getElementById('deleteModal');
