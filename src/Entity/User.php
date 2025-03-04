@@ -51,6 +51,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->foundsImages = new ArrayCollection();
+        $this->uuid = Uuid::v4()->toRfc4122();
     }
 
     public function getId(): ?int
