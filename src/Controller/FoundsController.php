@@ -11,6 +11,7 @@ use App\Repository\FoundsImageRepository;
 use App\Service\GeoService;
 use App\Service\ImageService;
 use App\Service\PdfService;
+use App\Service\MapService;
 use DateTime;
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
@@ -344,6 +345,7 @@ class FoundsController extends FinderAbstractController
         $photo->distanceToChurchOrCenter = $distance;
         $photo->churchOrCenterName       = $churchOrCenterName;
         $photo->setUser($this->getUser());
+        /** @noinspection PhpUndefinedMethodInspection */
         $photo->user_uuid = $this->getUser()->getUuid();
         $photo->isPublic  = $isPublic;
 
@@ -432,6 +434,7 @@ class FoundsController extends FinderAbstractController
         string                $date,
         FoundsImageRepository $foundsImageRepository,
         PdfService           $pdfService,
+        MapService           $mapService,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
         
@@ -446,7 +449,7 @@ class FoundsController extends FinderAbstractController
             throw $this->createNotFoundException('Keine Bilder für das angegebene Datum gefunden.');
         }
 
-        // Berechne min/max UTM Koordinaten
+        // Berechne min/max UTM Koordinaten und generiere Karte
         $utmCoordinates = [
             'min_utmX' => null,
             'max_utmX' => null,
@@ -454,7 +457,17 @@ class FoundsController extends FinderAbstractController
             'max_utmY' => null
         ];
 
+        $markers = [];
+        $latitudes = [];
+        $longitudes = [];
+        
         foreach ($images as $image) {
+            if ($image->latitude && $image->longitude) {
+                $markers[] = [$image->latitude, $image->longitude];
+                $latitudes[] = $image->latitude;
+                $longitudes[] = $image->longitude;
+            }
+            
             if ($image->utmX !== null) {
                 if ($utmCoordinates['min_utmX'] === null || $image->utmX < $utmCoordinates['min_utmX']) {
                     $utmCoordinates['min_utmX'] = $image->utmX;
@@ -473,6 +486,14 @@ class FoundsController extends FinderAbstractController
             }
         }
 
+        // Generiere die Karte wenn Koordinaten vorhanden sind
+        $mapFilename = null;
+        if (!empty($markers)) {
+            $centerLat = (min($latitudes) + max($latitudes)) / 2;
+            $centerLon = (min($longitudes) + max($longitudes)) / 2;
+            $mapFilename = $mapService->generateStaticMap($centerLat, $centerLon, $markers);
+        }
+
         // Setze Standardwerte falls keine Koordinaten gefunden wurden
         $utmCoordinates['min_utmX'] = $utmCoordinates['min_utmX'] ?? 0;
         $utmCoordinates['max_utmX'] = $utmCoordinates['max_utmX'] ?? 0;
@@ -480,16 +501,7 @@ class FoundsController extends FinderAbstractController
         $utmCoordinates['max_utmY'] = $utmCoordinates['max_utmY'] ?? 0;
 
         // Generiere PDF
-        $html = $this->renderView('pdf/upload_report.html.twig', [
-            'images' => $images,
-            'date' => $startDate,
-            'min_utmX' => $utmCoordinates['min_utmX'],
-            'max_utmX' => $utmCoordinates['max_utmX'],
-            'min_utmY' => $utmCoordinates['min_utmY'],
-            'max_utmY' => $utmCoordinates['max_utmY']
-        ]);
-
-        return $pdfService->generatePdf(
+        $response = $pdfService->generatePdf(
             'pdf/upload_report.html.twig',
             [
                 'images' => $images,
@@ -497,10 +509,17 @@ class FoundsController extends FinderAbstractController
                 'min_utmX' => $utmCoordinates['min_utmX'],
                 'max_utmX' => $utmCoordinates['max_utmX'],
                 'min_utmY' => $utmCoordinates['min_utmY'],
-                'max_utmY' => $utmCoordinates['max_utmY']
+                'max_utmY' => $utmCoordinates['max_utmY'],
+                'mapFilename' => $mapFilename,
+                'tempMapDir' => $mapService->getTempMapPath('')
             ],
             sprintf('Fundmeldungen-%s.pdf', $date)
         );
+
+        // Cleanup
+        $mapService->cleanupTempMaps();
+
+        return $response;
     }
 
     #[Route('/generate-word/{date}', name: 'generate_word', methods: ['GET'])]
@@ -582,25 +601,31 @@ class FoundsController extends FinderAbstractController
         $entity = $this->foundsImageRepository->find($id);
 
         if(!$entity) {
-            $this->addFlash('error', $this->translator->trans('delete.foundNotFound', [], 'founds'));
-            return $this->redirectToRoute('image_list');
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('delete.foundNotFound', [], 'founds')
+            ], 404);
         }
 
         if(!$this->isCsrfTokenValid('delete' . $entity->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', $this->translator->trans('delete.invalidCSRFToken', [], 'founds'));
-            return $this->redirectToRoute('image_list');
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('delete.invalidCSRFToken', [], 'founds')
+            ], 400);
         }
 
         $uploadDirectory = $this->getParameter('uploads_directory');
-        $filePath        = $uploadDirectory . '/' . $entity->filePath;
+        $filePath = $uploadDirectory . '/' . $entity->filePath;
         if(file_exists($filePath)) {
             unlink($filePath);
         }
 
         $this->foundsImageRepository->remove($entity, TRUE);
 
-        $this->addFlash('success', $this->translator->trans('delete.success', [], 'founds'));
-        return $this->redirectToRoute('image_list');
+        return $this->json([
+            'success' => true,
+            'message' => $this->translator->trans('delete.success', [], 'founds')
+        ]);
     }
 
     /**

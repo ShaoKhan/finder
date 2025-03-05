@@ -1,4 +1,19 @@
-{% include 'parts/header.html.twig' %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>{% block title %}{{ app_title }}{% endblock %}</title>
+    {% block meta %}{% endblock %}
+    {% block stylesheets %}
+        {{ encore_entry_link_tags('app') }}
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    {% endblock %}
+    {% block javascripts %}
+        {{ encore_entry_script_tags('app') }}
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {% endblock %}
+</head>
 <body>
 
     <div class="container">
@@ -20,8 +35,6 @@
 
     {% block body %}{% endblock %}
     {% block latejavascript %}{% endblock %}
-
-    {{ encore_entry_script_tags('app') }}
 
 </body>
 </html>
