@@ -42,7 +42,7 @@ filter:
 
 form:
   choose_photo: 'Wähle ein Foto'
-  choose_photos: 'Wähle deine Fotos'
+  choose_photos: 'Wähle deine Fotos (Halte die STRG-Taste gedrückt und wähle mehrere aus)'
   name: 'Bildname'
   note: 'Notiz'
   public: 'Öffentlich sichtbar? (Das Bild wird ohne Koordinaten o.ä. angezeigt)'
