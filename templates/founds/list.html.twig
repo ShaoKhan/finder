@@ -2,6 +2,15 @@
 
 {% trans_default_domain 'founds' %}
 
+{% block meta %}
+    {{ parent() }}
+    <meta name="delete-path" content="{{ path('found_delete', { id: 'PLACEHOLDER' }) }}">
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
 {% block body %}
     <div class="container">
         <div class="row">
@@ -51,18 +60,19 @@
                                 <i class="bi bi-arrow-down"></i>
                             {% endif %}
                         {% endif %}
-                    </a>
+                    </a><br />
+
+                    {% for message in app.flashes('success') %}
+                        <div class="alert alert-success">{{ message }}</div>
+                    {% endfor %}
+
+                    {% for message in app.flashes('error') %}
+                        <div class="alert alert-danger">{{ message }}</div>
+                    {% endfor %}
                 </div>
 
-                {% for message in app.flashes('success') %}
-                    <div class="alert alert-success">{{ message }}</div>
-                {% endfor %}
-
-                {% for message in app.flashes('error') %}
-                    <div class="alert alert-danger">{{ message }}</div>
-                {% endfor %}
-
                 {% for dateKey, group in groupedImages %}
+                
                     <div class="date-group mb-4">
                         <div class="d-flex justify-content-between align-items-center">
                             <h3 class="date-header mb-3">{{ group.date|date('d.m.Y') }}</h3>
@@ -80,7 +90,7 @@
                         </div>
                         
                         {% for image in group.images %}
-                            <div class="row align-items-center border rounded p-1 mb-2 h-100">
+                            <div class="row align-items-center border rounded p-1 mb-2 h-100 found-item">
                                 <!-- Bild -->
                                 <div class="col-12 col-md-3 text-center">
                                     <img
@@ -112,7 +122,7 @@
                                            data-bs-toggle="modal"
                                            data-bs-target="#deleteModal"
                                            data-id="{{ image.id }}"
-                                           data-name="{{ image.name }}"
+                                           data-name="{{ image.name|default(image.nearestTown) }}"
                                            data-csrf="{{ image.csrf }}">
                                         </i>
                                     </a>
@@ -167,56 +177,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    {{ 'modal.areYouSure'|trans({'%name%': '<span id="modal-item-name"></span>'|raw}) }}
+                    {{ 'modal.areYouSure'|trans({'%name%': '<span id="modalItemName"></span>'})|raw }}
                 </div>
                 <div class="modal-footer">
-                    <form id="deleteForm" method="post" data-url-template="{{ path('found_delete', { id: 'REPLACE_ID' }) }}">
-                        <input type="hidden" name="_token" id="csrfToken" value="">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans }}</button>
-                        <button type="submit" class="btn btn-danger">{{ 'modal.delete'|trans }}</button>
-                    </form>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans }}</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">{{ 'modal.delete'|trans }}</button>
                 </div>
             </div>
         </div>
     </div>
-{% endblock %}
-
-{% block stylesheets %}
-    {{ parent() }}
-    <style>
-        .date-header {
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 0.5rem;
-            color: #007bff;
-            margin-top: 2rem;
-        }
-        .date-group:first-child .date-header {
-            margin-top: 0;
-        }
-    </style>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const deleteModal = document.getElementById('deleteModal');
-            const deleteForm = document.getElementById('deleteForm');
-            const modalItemName = document.getElementById('modal-item-name');
-
-            deleteModal.addEventListener('show.bs.modal', function (event) {
-                const button = event.relatedTarget;
-                const itemId = button.getAttribute('data-id');
-                const itemName = button.getAttribute('data-name');
-                const csrfToken = button.getAttribute('data-csrf');
-                const deleteUrl = deleteForm.getAttribute('data-url-template').replace('REPLACE_ID', itemId);
-
-                if (modalItemName) {
-                    modalItemName.textContent = itemName;
-                }
-                deleteForm.action = deleteUrl;
-                deleteForm.querySelector('#csrfToken').value = csrfToken;
-            });
-        });
-    </script>
 {% endblock %}

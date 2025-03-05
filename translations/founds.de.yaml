@@ -52,7 +52,7 @@ form:
 
 modal:
   confirmDeletion: 'Löschen bestätigen'
-  areYouSure: 'Du bist im Begriff die Fundmeldung sowie das Bild / die Bilder unwiderruflich zu löschen! Bist du sicher?'
+  areYouSure: 'Du bist im Begriff die Fundmeldung sowie das Bild / die Bilder %name% unwiderruflich zu löschen! Bist du sicher?'
   cancel: 'Abbrechen'
   delete: 'Löschen'
 
