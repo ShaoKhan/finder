@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Changelog{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1 class="mb-4">Changelog</h1>
+        
+        {% for sortDate, dateGroup in commits %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ dateGroup.displayDate }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for commit in dateGroup.commits %}
+                            <div class="commit-item mb-2">
+                                <div class="commit-message">
+                                    {{ commit.message }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <style>
+        .timeline {
+            position: relative;
+        }
+        
+        .commit-item {
+            position: relative;
+            padding-left: 0;
+        }
+        
+        .commit-message {
+            font-size: 1em;
+            color: #333;
+        }
+    </style>
+{% endblock %} 
