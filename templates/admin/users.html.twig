@@ -1,0 +1,210 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Benutzerverwaltung{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+            cursor: pointer;
+        }
+        .user-roles {
+            list-style: none;
+            padding-left: 0;
+        }
+        .user-roles li {
+            display: inline-block;
+            margin-right: 0.5em;
+            padding: 0.2em 0.6em;
+            background-color: #e9ecef;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+        }
+        .role-admin {
+            background-color: #dc3545 !important;
+            color: white;
+        }
+        .role-moderator {
+            background-color: #ffc107 !important;
+            color: black;
+        }
+        .role-user {
+            background-color: #0d6efd !important;
+            color: white;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Benutzerverwaltung</h1>
+        </div>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">{{ message }}</div>
+        {% endfor %}
+
+        <!-- Benutzerliste mit Accordion -->
+        <div class="accordion" id="userAccordion">
+            {% for user in users %}
+                <div class="accordion-item mb-2">
+                    <h2 class="accordion-header" id="heading{{ user.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapse{{ user.id }}" aria-expanded="false"
+                                aria-controls="collapse{{ user.id }}">
+                            <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                <span>
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    {{ user.email }}
+                                </span>
+                                <div class="form-check form-switch me-2" onclick="event.stopPropagation();">
+                                    <input class="form-check-input toggle-status-btn" type="checkbox"
+                                           id="statusSwitch{{ user.id }}"
+                                           data-user-id="{{ user.id }}"
+                                           {% if user.isActive %}checked{% endif %}>
+                                    <label class="form-check-label" for="statusSwitch{{ user.id }}">
+                                        <span class="visually-hidden">Status ändern</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ user.id }}" class="accordion-collapse collapse"
+                         aria-labelledby="heading{{ user.id }}" data-bs-parent="#userAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Benutzerdetails</h5>
+                                    <ul class="list-unstyled">
+                                        <li><strong>E-Mail:</strong> {{ user.email }}</li>
+                                        <li>
+                                            <strong>Rollen:</strong>
+                                            <ul class="user-roles mt-2">
+                                                {% for role in user.roles %}
+                                                    <li class="role-{{ role|lower|replace({'role_': ''}) }}">
+                                                        {{ role|replace({'ROLE_': ''}) }}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </li>
+                                        <li><strong>Verifiziert:</strong> 
+                                            <span class="badge {% if user.isVerified %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ user.isVerified ? 'Ja' : 'Nein' }}
+                                            </span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Aktionen</h5>
+                                    <button type="button" class="btn btn-danger delete-user-btn"
+                                            data-user-id="{{ user.id }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteUserModal">
+                                        <i class="bi bi-trash me-1"></i>
+                                        Löschen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">Keine Benutzer gefunden</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteUserModalLabel">Benutzer löschen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Möchten Sie diesen Benutzer wirklich löschen?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Löschen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let userIdToDelete = null;
+
+            // Status Toggle
+            document.querySelectorAll('.toggle-status-btn').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const userId = this.dataset.userId;
+                    fetch(`{{ path('admin_user_toggle_status', {'id': 'USER_ID'}) }}`.replace('USER_ID', userId), {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Fehler: ' + data.message);
+                            // Checkbox-Status zurücksetzen
+                            this.checked = !this.checked;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Ein Fehler ist aufgetreten');
+                        // Checkbox-Status zurücksetzen
+                        this.checked = !this.checked;
+                    });
+                });
+            });
+
+            // Delete User
+            document.querySelectorAll('.delete-user-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    userIdToDelete = this.dataset.userId;
+                });
+            });
+
+            document.getElementById('confirmDelete').addEventListener('click', function() {
+                if (userIdToDelete) {
+                    fetch(`{{ path('admin_user_delete', {'id': 'USER_ID'}) }}`.replace('USER_ID', userIdToDelete), {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Fehler: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Ein Fehler ist aufgetreten');
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %} 
