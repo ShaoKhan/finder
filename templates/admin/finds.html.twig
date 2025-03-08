@@ -1,0 +1,323 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fundübersicht - Admin{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .thumbnail {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .thumbnail:hover {
+            transform: scale(1.05);
+        }
+        .modal-image {
+            max-width: 100%;
+            height: auto;
+        }
+        .user-section {
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .find-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: white;
+        }
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        .badge-public {
+            background-color: #198754;
+            color: white;
+        }
+        .badge-private {
+            background-color: #dc3545;
+            color: white;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #e7f1ff;
+        }
+        .finds-count {
+            background-color: #0d6efd;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            margin-left: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .date-accordion .accordion-button {
+            padding: 0.5rem 1rem;
+            font-size: 0.95rem;
+            background-color: #f8f9fa;
+        }
+        .date-accordion .accordion-body {
+            padding: 1rem;
+            background-color: white;
+        }
+        .date-count {
+            background-color: #6c757d;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            margin-left: 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1 class="mb-4">Fundübersicht</h1>
+
+        <div class="accordion" id="userAccordion">
+            {% set currentUser = null %}
+            {% set userFinds = [] %}
+            
+            {% for find in finds %}
+                {% if currentUser != find.user.email %}
+                    {% if currentUser != null %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ currentUser|replace({'@': '', '.': ''}) }}" 
+                                        aria-expanded="false" 
+                                        aria-controls="collapse{{ currentUser|replace({'@': '', '.': ''}) }}">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    {{ currentUser }}
+                                    <span class="finds-count">{{ userFinds|length }} Funde</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ currentUser|replace({'@': '', '.': ''}) }}" 
+                                 class="accordion-collapse collapse" 
+                                 data-bs-parent="#userAccordion">
+                                <div class="accordion-body">
+                                    {% set dateGroups = {} %}
+                                    {% for userFind in userFinds %}
+                                        {% set dateKey = userFind.createdAt|date('Y-m-d') %}
+                                        {% if dateGroups[dateKey] is not defined %}
+                                            {% set dateGroups = dateGroups|merge({(dateKey): []}) %}
+                                        {% endif %}
+                                        {% set dateGroups = dateGroups|merge({
+                                            (dateKey): dateGroups[dateKey]|merge([userFind])
+                                        }) %}
+                                    {% endfor %}
+
+                                    <div class="accordion date-accordion" id="dateAccordion{{ currentUser|replace({'@': '', '.': ''}) }}">
+                                        {% for date, dateFunds in dateGroups %}
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" 
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#collapse{{ currentUser|replace({'@': '', '.': ''}) }}{{ date|replace({'-': ''}) }}"
+                                                            aria-expanded="false">
+                                                        <i class="bi bi-calendar-event me-2"></i>
+                                                        {{ date|date('d.m.Y') }}
+                                                        <span class="date-count">{{ dateFunds|length }} Funde</span>
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse{{ currentUser|replace({'@': '', '.': ''}) }}{{ date|replace({'-': ''}) }}"
+                                                     class="accordion-collapse collapse"
+                                                     data-bs-parent="#dateAccordion{{ currentUser|replace({'@': '', '.': ''}) }}">
+                                                    <div class="accordion-body">
+                                                        {% for fund in dateFunds %}
+                                                            <div class="find-card">
+                                                                <div class="row">
+                                                                    <div class="col-md-6">
+                                                                        <p><strong>Zeit:</strong> {{ fund.createdAt|date('H:i') }}</p>
+                                                                        {% if fund.note %}
+                                                                            <p><strong>Notiz:</strong> {{ fund.note }}</p>
+                                                                        {% endif %}
+                                                                        {% if fund.nearestTown or fund.district or fund.county or fund.state %}
+                                                                            <p><strong>Ort:</strong>
+                                                                                {{ [fund.nearestTown, fund.district, fund.county, fund.state]|filter(v => v)|join(', ') }}
+                                                                            </p>
+                                                                        {% endif %}
+                                                                        {% if fund.latitude and fund.longitude %}
+                                                                            <p><strong>Koordinaten:</strong> {{ fund.latitude }}, {{ fund.longitude }}</p>
+                                                                        {% endif %}
+                                                                        <p>
+                                                                            <strong>Status:</strong>
+                                                                            <span class="badge {% if fund.isPublic %}badge-public{% else %}badge-private{% endif %}">
+                                                                                {{ fund.isPublic ? 'Öffentlich' : 'Privat' }}
+                                                                            </span>
+                                                                        </p>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="image-gallery">
+                                                                            <img src="{{ asset('fundbilder/' ~ fund.filePath) }}" 
+                                                                                 class="thumbnail" 
+                                                                                 alt="Fund Bild"
+                                                                                 data-bs-toggle="modal"
+                                                                                 data-bs-target="#imageModal"
+                                                                                 data-full-image="{{ asset('fundbilder/' ~ fund.filePath) }}"
+                                                                                 data-note="{{ fund.note|default('Keine Notiz vorhanden') }}">
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% set userFinds = [] %}
+                    {% set currentUser = find.user.email %}
+                {% endif %}
+                {% set userFinds = userFinds|merge([find]) %}
+            {% endfor %}
+
+            {# Letzten Benutzer ausgeben #}
+            {% if currentUser != null %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapse{{ currentUser|replace({'@': '', '.': ''}) }}" 
+                                aria-expanded="false" 
+                                aria-controls="collapse{{ currentUser|replace({'@': '', '.': ''}) }}">
+                            <i class="bi bi-person-circle me-2"></i>
+                            {{ currentUser }}
+                            <span class="finds-count">{{ userFinds|length }} Funde</span>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ currentUser|replace({'@': '', '.': ''}) }}" 
+                         class="accordion-collapse collapse" 
+                         data-bs-parent="#userAccordion">
+                        <div class="accordion-body">
+                            {% set dateGroups = {} %}
+                            {% for userFind in userFinds %}
+                                {% set dateKey = userFind.createdAt|date('Y-m-d') %}
+                                {% if dateGroups[dateKey] is not defined %}
+                                    {% set dateGroups = dateGroups|merge({(dateKey): []}) %}
+                                {% endif %}
+                                {% set dateGroups = dateGroups|merge({
+                                    (dateKey): dateGroups[dateKey]|merge([userFind])
+                                }) %}
+                            {% endfor %}
+
+                            <div class="accordion date-accordion" id="dateAccordion{{ currentUser|replace({'@': '', '.': ''}) }}">
+                                {% for date, dateFunds in dateGroups %}
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#collapse{{ currentUser|replace({'@': '', '.': ''}) }}{{ date|replace({'-': ''}) }}"
+                                                    aria-expanded="false">
+                                                <i class="bi bi-calendar-event me-2"></i>
+                                                {{ date|date('d.m.Y') }}
+                                                <span class="date-count">{{ dateFunds|length }} Funde</span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse{{ currentUser|replace({'@': '', '.': ''}) }}{{ date|replace({'-': ''}) }}"
+                                             class="accordion-collapse collapse"
+                                             data-bs-parent="#dateAccordion{{ currentUser|replace({'@': '', '.': ''}) }}">
+                                            <div class="accordion-body">
+                                                {% for fund in dateFunds %}
+                                                    <div class="find-card">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <p><strong>Zeit:</strong> {{ fund.createdAt|date('H:i') }}</p>
+                                                                {% if fund.note %}
+                                                                    <p><strong>Notiz:</strong> {{ fund.note }}</p>
+                                                                {% endif %}
+                                                                {% if fund.nearestTown or fund.district or fund.county or fund.state %}
+                                                                    <p><strong>Ort:</strong>
+                                                                        {{ [fund.nearestTown, fund.district, fund.county, fund.state]|filter(v => v)|join(', ') }}
+                                                                    </p>
+                                                                {% endif %}
+                                                                {% if fund.latitude and fund.longitude %}
+                                                                    <p><strong>Koordinaten:</strong> {{ fund.latitude }}, {{ fund.longitude }}</p>
+                                                                {% endif %}
+                                                                <p>
+                                                                    <strong>Status:</strong>
+                                                                    <span class="badge {% if fund.isPublic %}badge-public{% else %}badge-private{% endif %}">
+                                                                        {{ fund.isPublic ? 'Öffentlich' : 'Privat' }}
+                                                                    </span>
+                                                                </p>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="image-gallery">
+                                                                    <img src="{{ asset('fundbilder/' ~ fund.filePath) }}" 
+                                                                         class="thumbnail" 
+                                                                         alt="Fund Bild"
+                                                                         data-bs-toggle="modal"
+                                                                         data-bs-target="#imageModal"
+                                                                         data-full-image="{{ asset('fundbilder/' ~ fund.filePath) }}"
+                                                                         data-note="{{ fund.note|default('Keine Notiz vorhanden') }}">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if finds is empty %}
+            <div class="alert alert-info">Keine Funde vorhanden</div>
+        {% endif %}
+    </div>
+
+    <!-- Bild Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Bild Vergrößerung</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img src="" class="modal-image" alt="Vergrößertes Bild">
+                    </div>
+                    <div class="mt-3">
+                        <h6>Notiz:</h6>
+                        <p id="modalNote" class="text-muted"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageModal = document.getElementById('imageModal');
+            const modalImage = imageModal.querySelector('.modal-image');
+            const modalNote = document.getElementById('modalNote');
+
+            document.querySelectorAll('.thumbnail').forEach(thumbnail => {
+                thumbnail.addEventListener('click', function() {
+                    const fullImageUrl = this.dataset.fullImage;
+                    const note = this.dataset.note;
+                    modalImage.src = fullImageUrl;
+                    modalNote.textContent = note;
+                });
+            });
+        });
+    </script>
+{% endblock %} 

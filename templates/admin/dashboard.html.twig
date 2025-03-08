@@ -1,0 +1,256 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1 class="mb-4">Admin Dashboard</h1>
+
+        <!-- Statistik-Karten -->
+        <div class="row">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <a href="{{ path('admin_users') }}" class="text-decoration-none">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Benutzer</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.totalUsers }}</div>
+                                    <div class="small text-muted mt-2">
+                                        {{ stats.activeUsers }} aktiv / {{ stats.verifiedUsers }} verifiziert
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-person fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <a href="{{ path('admin_finds') }}" class="text-decoration-none">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Fundmeldungen</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.totalFinds }}</div>
+                                    <div class="small text-muted mt-2">
+                                        {{ stats.publicFinds }} öffentlich
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-camera fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    Speicherplatz</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.totalSizeMB }} MB</div>
+                                <div class="small text-muted mt-2">
+                                    Fundbilder-Verzeichnis
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-hdd fs-2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Durchschnitt</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ (stats.totalFinds / stats.totalUsers)|round(1) }}
+                                </div>
+                                <div class="small text-muted mt-2">
+                                    Funde pro Benutzer
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-graph-up fs-2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Letzte Aktivitäten -->
+        <div class="row">
+            <div class="col-xl-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Neueste Fundmeldungen</h6>
+                        <a href="{{ path('admin_finds') }}" class="btn btn-sm btn-primary">
+                            Alle anzeigen
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if recentFinds is empty %}
+                            <p class="text-muted">Keine Fundmeldungen vorhanden.</p>
+                        {% else %}
+                            <div class="list-group">
+                                {% for find in recentFinds %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <div>
+                                                <h6 class="mb-1">{{ find.user.email }}</h6>
+                                                <p class="mb-1">
+                                                    {% if find.note %}
+                                                        {{ find.note }}
+                                                    {% else %}
+                                                        <span class="text-muted">Keine Notiz</span>
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            <small class="text-muted">
+                                                {{ find.createdAt|date('d.m.Y H:i') }}
+                                            </small>
+                                        </div>
+                                        <div class="mt-2">
+                                            <span class="badge {% if find.isPublic %}badge-success{% else %}badge-danger{% endif %}">
+                                                {{ find.isPublic ? 'Öffentlich' : 'Privat' }}
+                                            </span>
+                                            {% if find.latitude and find.longitude %}
+                                                <span class="badge bg-info">Mit Koordinaten</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Neue Benutzer</h6>
+                        <a href="{{ path('admin_users') }}" class="btn btn-sm btn-primary">
+                            Alle anzeigen
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if recentUsers is empty %}
+                            <p class="text-muted">Keine Benutzer vorhanden.</p>
+                        {% else %}
+                            <div class="list-group">
+                                {% for user in recentUsers %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">{{ user.email }}</h6>
+                                                <div class="mt-2">
+                                                    {% for role in user.roles %}
+                                                        <span class="badge bg-secondary">{{ role|replace({'ROLE_': ''}) }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge {% if user.isVerified %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {{ user.isVerified ? 'Verifiziert' : 'Nicht verifiziert' }}
+                                                </span>
+                                                <br>
+                                                <span class="badge {% if user.isActive %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ user.isActive ? 'Aktiv' : 'Inaktiv' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .border-left-primary {
+            border-left: .25rem solid #4e73df!important;
+        }
+
+        .border-left-success {
+            border-left: .25rem solid #1cc88a!important;
+        }
+
+        .border-left-info {
+            border-left: .25rem solid #36b9cc!important;
+        }
+
+        .border-left-warning {
+            border-left: .25rem solid #f6c23e!important;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69!important;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .badge-success {
+            background-color: #198754;
+            color: white;
+        }
+
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .list-group-item {
+            border-left: none;
+            border-right: none;
+        }
+
+        .list-group-item:first-child {
+            border-top: none;
+        }
+
+        .list-group-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Hover-Effekte nur für klickbare Kacheln */
+        a .card {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        a:hover .card {
+            transform: translateY(-5px);
+        }
+
+        a:hover .card.border-left-primary {
+            box-shadow: 0 .5rem 1rem rgba(78,115,223,.25)!important;
+        }
+
+        a:hover .card.border-left-success {
+            box-shadow: 0 .5rem 1rem rgba(28,200,138,.25)!important;
+        }
+    </style>
+{% endblock %} 
