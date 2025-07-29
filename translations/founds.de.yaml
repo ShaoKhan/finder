@@ -47,12 +47,14 @@ form:
   note: 'Notiz'
   public: 'Öffentlich sichtbar? (Das Bild wird ohne Koordinaten o.ä. angezeigt)'
   save: 'Speichern'
-  noFilesUploaded: 'Es gibt hier nichts hochzuladen?'
+  noFilesUploaded: 'Bitte wählen Sie mindestens eine Datei zum Hochladen aus.'
   imagesOnly: 'Bitte nur Bilder mit der Endung: JPEG oder PNG hochladen.'
 
 modal:
   confirmDeletion: 'Löschen bestätigen'
   areYouSure: 'Du bist im Begriff die Fundmeldung sowie das Bild / die Bilder %name% unwiderruflich zu löschen! Bist du sicher?'
+  confirmBulkDeletion: 'Mehrfach-Löschung bestätigen'
+  areYouSureBulk: 'Du bist im Begriff %count% Bild(er) unwiderruflich zu löschen! Bist du sicher?'
   cancel: 'Abbrechen'
   delete: 'Löschen'
 
@@ -60,3 +62,23 @@ delete:
   foundNotFound: 'Die Fundmeldung konnte nicht gefunden werden ;)'
   invalidCSRFToken: 'CSRF Token nicht valide'
   success: 'Die Fundmeldung und dazugehörige Bilder wurde gelöscht.'
+
+# Gemarkung-Nachrichten (entfernt - keine Benachrichtigungen mehr)
+
+# Upload-Nachrichten
+uploadAllFailed: 'Alle Dateien konnten nicht hochgeladen werden. Bitte überprüfen Sie die Fehlermeldungen und versuchen Sie es erneut.'
+uploadPartialSuccess: '%count% Bilder wurden erfolgreich hochgeladen. Einige Dateien konnten nicht verarbeitet werden.'
+
+# Mehrfach-Löschfunktion
+bulkDelete:
+  selectAll: 'Alle auswählen'
+  deleteSelected: 'Ausgewählte löschen'
+  deleteSelectedCount: '%count% ausgewählte löschen'
+  confirmDelete: 'Möchten Sie wirklich %count% Bild(er) löschen?'
+  noSelection: 'Bitte wählen Sie mindestens ein Bild aus.'
+  success: '%count% Bilder wurden erfolgreich gelöscht.'
+  error: 'Ein Fehler ist beim Löschen aufgetreten'
+  noPermission: 'Keine Berechtigung zum Löschen von Bild %id%.'
+  notFound: 'Bild mit ID %id% nicht gefunden.'
+  deleting: 'Löschen...'
+  noImagesSelected: 'Keine Bilder zum Löschen ausgewählt.'

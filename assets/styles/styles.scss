@@ -3,3 +3,13 @@ body {
   background-color: lightgray;
   font-family: "Gayathri", serif;
 }
+
+.error-list {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.error-list li {
+  margin-bottom: 0.25rem;
+  color: #721c24;
+}

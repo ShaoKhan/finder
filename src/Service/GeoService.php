@@ -5,7 +5,7 @@ namespace App\Service;
 
 use Exception;
 use Geometry;
-use geoPHP;
+use \geoPHP;
 use proj4php\Point;
 use proj4php\Proj;
 use proj4php\Proj4php;
@@ -37,6 +37,26 @@ class GeoService
         $utmPoint = $proj4->transform($utm33, $point);
 
         return ['utmX' => $utmPoint->x, 'utmY' => $utmPoint->y];
+    }
+
+    /**
+     * Konvertiert UTM33-Koordinaten zu WGS84
+     *
+     * @param float $utmX
+     * @param float $utmY
+     *
+     * @return array
+     */
+    public function convertToWGS84(float $utmX, float $utmY): array
+    {
+        $proj4 = new Proj4php();
+        $wgs84 = new Proj('EPSG:4326', $proj4);  // WGS84
+        $utm33 = new Proj('EPSG:32633', $proj4); // UTM33
+
+        $point = new Point($utmX, $utmY, $utm33);
+        $wgs84Point = $proj4->transform($wgs84, $point);
+
+        return ['longitude' => $wgs84Point->x, 'latitude' => $wgs84Point->y];
     }
 
     /**
@@ -118,48 +138,56 @@ EOT;
 
     public function getNearestTown(float $latitude, float $longitude): ?array
     {
-        $url = "https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude";
-
-        // Set the User-Agent header
+        // Erst: Reverse-Geocoding um den Ortsnamen zu finden
+        $reverseUrl = "https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude";
+        
         $options = [
             "http" => [
                 "header" => "User-Agent: MySymfonyApp/1.0 (myemail@example.com)\r\n",
             ],
         ];
-
-        // Create a stream context
+        
         $context = stream_context_create($options);
-
+        
         try {
-            $response = @file_get_contents($url, FALSE, $context);
+            $response = @file_get_contents($reverseUrl, FALSE, $context);
             if($response === FALSE) {
                 throw new Exception("Failed to fetch data from Nominatim API.");
             }
-
+            
             $data = json_decode($response, TRUE);
-
-            // Check for 'address' and extract the nearest town, city, or village
-            $nearestTown = $data['address']['town']
-                           ?? $data['address']['city']
-                              ?? $data['address']['village']
-                                 ?? NULL;
-
+            
+            // Extrahiere den Ortsnamen
+            $nearestTown = $data['address']['town'] ?? $data['address']['city'] ?? $data['address']['village'] ?? NULL;
+            
             if(!$nearestTown) {
                 return NULL;
             }
-
-            #dd($data, $nearestTown);
-
-            // Extract latitude and longitude of the place
-            $townLatitude  = $data['lat'] ?? NULL;
-            $townLongitude = $data['lon'] ?? NULL;
-
+            
+            // Dann: Suche nach dem Ortskern
+            $searchUrl = "https://nominatim.openstreetmap.org/search?format=json&q=" . urlencode("$nearestTown, Brandenburg, Germany") . "&limit=1";
+            
+            $response = @file_get_contents($searchUrl, FALSE, $context);
+            if($response === FALSE) {
+                throw new Exception("Failed to fetch town center data from Nominatim API.");
+            }
+            
+            $searchData = json_decode($response, TRUE);
+            
+            if(empty($searchData)) {
+                return NULL;
+            }
+            
+            $town = $searchData[0];
+            $townLatitude = $town['lat'] ?? NULL;
+            $townLongitude = $town['lon'] ?? NULL;
+            
             return [
                 'name'      => $nearestTown,
                 'latitude'  => (float)$townLatitude,
                 'longitude' => (float)$townLongitude,
             ];
-
+            
         }
         catch(Exception $e) {
             return NULL;
@@ -191,20 +219,27 @@ EOT;
 
     public function getGemarkungByUTM(float $utmX, float $utmY): ?array
     {
-        // Basis-URL der API
-        $baseUrl = "https://ogc-api.geobasis-bb.de/alkis-vereinfacht/v1/collections/katasterbezirk";
+        // Basis-URL der API (neuer Endpunkt /items)
+        $baseUrl = "https://ogc-api.geobasis-bb.de/alkis-vereinfacht/v1/collections/katasterbezirk/items";
 
-        // API-Parameter (mit Filter für Punktabfrage)
+        // Erzeuge eine kleine BBox um den Punkt (±0.5 Meter)
+        $delta = 0.5;
+        $minX = $utmX - $delta;
+        $maxX = $utmX + $delta;
+        $minY = $utmY - $delta;
+        $maxY = $utmY + $delta;
+
+        // API-Parameter (BBox für kleinen Bereich um den Punkt)
         $params = [
-            'f'      => 'json', // Rückgabeformat JSON
-            'filter' => "INTERSECTS(geometry,SRID=25833;POINT($utmX $utmY))", // Geometrie-Filter
+            'f'    => 'json',
+            'bbox' => "$minX,$minY,$maxX,$maxY",
         ];
 
         // Erzeuge die URL mit den Parametern
         $queryString = http_build_query($params);
         $requestUrl  = "$baseUrl?$queryString";
 
-        echo $requestUrl;
+        error_log('Gemarkung-API URL: ' . $requestUrl);
         try {
             // API-Aufruf
             $response = @file_get_contents($requestUrl);
@@ -258,18 +293,31 @@ EOT;
     }
 
     /**
-     * @throws exception
+     * Findet die Gemarkung und das Flurstück basierend auf den gegebenen Koordinaten
+     * 
+     * @param float $latitude
+     * @param float $longitude
+     * @param string $localFile
+     * @return array|null
+     * @throws \Exception
      */
-    public function findGemarkung(float $latitude, float $longitude, string $localFile): ?array
+    public function findGemarkungAndFlurstueck(float $latitude, float $longitude, string $localFile): ?array
     {
         $data = json_decode(file_get_contents($localFile), true);
+        
+        if (!$data || !isset($data['features'])) {
+            return null;
+        }
+        
+        $gemarkung = null;
+        $flurstueck = null;
+        
         foreach ($data['features'] as $feature) {
             $geometryData = $feature['geometry'];
 
             // Lade MultiPolygon
             $geometry = geoPHP::load(json_encode($geometryData), 'json');
             if (!$geometry instanceof Geometry) {
-                throw new \Exception("Invalid MultiPolygon geometry.");
                 continue;
             }
 
@@ -277,33 +325,59 @@ EOT;
             $pointWKT = "POINT($longitude $latitude)";
             $point = geoPHP::load($pointWKT, 'wkt');
             if (!$point instanceof Geometry) {
-                throw new \Exception("Failed to create Point geometry.");
-            }
-
-            // Prüfe Bounding Box
-            $boundingBox = $geometry->getBBox();
-            if ($longitude < $boundingBox['minx'] || $longitude > $boundingBox['maxx'] ||
-                $latitude < $boundingBox['miny'] || $latitude > $boundingBox['maxy']) {
-                echo "Point ($longitude, $latitude) is outside the bounding box:<br />";
-                echo "Bounding Box: MinX={$boundingBox['minx']}, MinY={$boundingBox['miny']}, MaxX={$boundingBox['maxx']}, MaxY={$boundingBox['maxy']}<br />";
                 continue;
             }
 
-
+            // Prüfe Bounding Box für Performance-Optimierung
+            $boundingBox = $geometry->getBBox();
+            if ($longitude < $boundingBox['minx'] || $longitude > $boundingBox['maxx'] ||
+                $latitude < $boundingBox['miny'] || $latitude > $boundingBox['maxy']) {
+                continue;
+            }
 
             // Prüfe, ob der Punkt im MultiPolygon liegt
             if ($geometry->contains($point)) {
-                echo 'got points<br />';
                 $properties = $feature['properties'];
-
-                return [
-                    'name'   => $properties['gemarkungsname'] ?? null,
-                    'number' => $properties['gemarkungsnummer'] ?? null,
-                ];
+                
+                // Bestimme, ob es sich um eine Gemarkung oder ein Flurstück handelt
+                $art = $properties['art'] ?? '';
+                
+                if ($art === 'Gemarkungsteil/Flur') {
+                    // Es ist ein Flurstück
+                    $flurstueck = [
+                        'name' => $properties['name'] ?? null,
+                        'number' => $properties['schluessel'] ?? null,
+                    ];
+                } else {
+                    // Es ist eine Gemarkung
+                    $gemarkung = [
+                        'name' => $properties['ueboname'] ?? null,
+                        'number' => $properties['uebobjekt'] ?? null,
+                    ];
+                }
             }
         }
 
-        return null;
+        // Gib beide Ergebnisse zurück
+        return [
+            'gemarkung' => $gemarkung,
+            'flurstueck' => $flurstueck,
+        ];
+    }
+
+    /**
+     * Findet die Gemarkung basierend auf den gegebenen Koordinaten
+     * 
+     * @param float $latitude
+     * @param float $longitude
+     * @param string $localFile
+     * @return array|null
+     * @throws \Exception
+     */
+    public function findGemarkung(float $latitude, float $longitude, string $localFile): ?array
+    {
+        $result = $this->findGemarkungAndFlurstueck($latitude, $longitude, $localFile);
+        return $result['gemarkung'] ?? null;
     }
 
 
