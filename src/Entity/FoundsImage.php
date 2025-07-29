@@ -15,7 +15,7 @@ class FoundsImage
     public ?string            $note                     = NULL;
     #[ORM\Column(type: 'string', length: 255)]
     public ?string            $username                 = NULL;
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: 'string', length: 255, nullable: false)]
     public ?string            $user_uuid                = NULL;
     #[ORM\Column(type: 'datetime')]
     public \DateTimeInterface $createdAt;
@@ -55,6 +55,14 @@ class FoundsImage
     public ?float             $longitude                = NULL;
     #[ORM\Column(type: 'boolean')]
     public bool               $isPublic                 = FALSE;
+    #[ORM\Column(type: 'string', length: 255, nullable: TRUE)]
+    public ?string $gemarkungName = NULL;
+    #[ORM\Column(type: 'string', length: 255, nullable: TRUE)]
+    public ?string $gemarkungNummer = NULL;
+    #[ORM\Column(type: 'string', length: 255, nullable: TRUE)]
+    public ?string $flurstueckName = NULL;
+    #[ORM\Column(type: 'string', length: 255, nullable: TRUE)]
+    public ?string $flurstueckNummer = NULL;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]

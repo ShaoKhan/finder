@@ -5,6 +5,7 @@
 {% block meta %}
     {{ parent() }}
     <meta name="delete-path" content="{{ path('found_delete', { id: 'PLACEHOLDER' }) }}">
+    <meta name="csrf-token" content="{{ csrf_token('bulk_delete') }}">
 {% endblock %}
 
 {% block stylesheets %}
@@ -89,10 +90,31 @@
                             </div>
                         </div>
                         
+                        <!-- Mehrfach-Löschfunktion für diese Datumsgruppe -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input date-group-select-all" type="checkbox" 
+                                       data-date-group="{{ dateKey }}">
+                                <label class="form-check-label" for="selectAll">
+                                    {{ 'bulkDelete.selectAll'|trans }}
+                                </label>
+                                <button type="button" class="btn btn-danger btn-sm date-group-delete-btn" 
+                                    data-date-group="{{ dateKey }}" disabled>
+                                    <i class="bi bi-trash3"></i> {{ 'bulkDelete.deleteSelected'|trans }}
+                                </button>
+                            </div>
+                            
+                        </div>
+                        
                         {% for image in group.images %}
-                            <div class="row align-items-center border rounded p-1 mb-2 h-100 found-item">
+                            <div class="row align-items-center border rounded p-1 mb-2 h-100 found-item" data-date-group="{{ dateKey }}">
+                                <!-- Checkbox für Mehrfach-Löschung -->
+                                <div class="col-12 col-md-1 text-center">
+                                    <input type="checkbox" class="form-check-input image-checkbox" 
+                                           value="{{ image.id }}" data-image-id="{{ image.id }}">
+                                </div>
                                 <!-- Bild -->
-                                <div class="col-12 col-md-3 text-center">
+                                <div class="col-12 col-md-2 text-center">
                                     <img
                                             src="{{ asset('fundbilder/' ~ image.filePath) }}"
                                             alt="{{ image.name }}"
@@ -101,15 +123,18 @@
                                 </div>
 
                                 <!-- Informationen -->
-                                <div class="col-12 col-md-5">
+                                <div class="col-12 col-md-4">
                                     <p class="mb-1"><strong>{{ 'filter.name'|trans }}:</strong> {{ image.name|default(image.nearestTown) }}</p>
                                     <p class="mb-1">
                                         <strong>{{ 'state'|trans }}:</strong> {{ image.state }}<br/>
                                         <strong>{{ 'county'|trans }}:</strong> {{ image.county }}<br/>
-                                        <strong>{{ 'district'|trans }}:</strong> {{ image.district }}<br/>
-                                        <strong>{{ 'parcel'|trans }}:</strong> {{ image.parcel|default('nix') }}<br/>
-                                        <strong>{{ 'next'|trans }}:</strong> {{ image.church_or_center_name }}
-                                        in {{ image.distanceToChurchOrCenter|default('0') }} km
+                                        <strong>Gemarkung:</strong> {{ image.gemarkungName|default('unbekannt') }}{% if image.gemarkungNummer %} ({{ image.gemarkungNummer }}){% endif %}<br/>
+                                        <strong>Flurstück:</strong> {{ image.flurstueckName|default('unbekannt') }}{% if image.flurstueckNummer %} ({{ image.flurstueckNummer }}){% endif %}<br/>
+                                        <strong>{{ 'next'|trans }}:</strong>
+                                        {{ image.church_or_center_name|default('unbekannt') }}
+                                        {% if image.distanceToChurchOrCenter is not null %}
+                                            ({{ (image.distanceToChurchOrCenter * 1000)|number_format(0, ',', '.') }} m)
+                                        {% endif %}
                                     </p>
                                     <p class="mb-1"><strong>{{ 'filter.utm'|trans }}:</strong> {{ image.utm|default('keine UTM Daten') }}</p>
                                     <p class="mb-1"><strong>{{ 'filter.date'|trans }}:</strong> {{ image.createdAt|date('Y-m-d H:i') }}</p>
@@ -182,6 +207,25 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans }}</button>
                     <button type="button" class="btn btn-danger" id="confirmDelete">{{ 'modal.delete'|trans }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Delete Modal -->
+    <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkDeleteModalLabel">{{ 'modal.confirmBulkDeletion'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{{ 'modal.areYouSureBulk'|trans({'%count%': '<span id="bulkDeleteCount"></span>'})|raw }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans }}</button>
+                    <button type="button" class="btn btn-danger" id="confirmBulkDelete">{{ 'modal.delete'|trans }}</button>
                 </div>
             </div>
         </div>

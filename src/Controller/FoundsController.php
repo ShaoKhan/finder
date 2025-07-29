@@ -12,6 +12,7 @@ use App\Service\GeoService;
 use App\Service\ImageService;
 use App\Service\PdfService;
 use App\Service\MapService;
+use App\Service\LocalGemarkungService;
 use DateTime;
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Psr\Log\LoggerInterface;
 
 class FoundsController extends FinderAbstractController
 {
@@ -31,6 +33,8 @@ class FoundsController extends FinderAbstractController
         private readonly FoundsImageRepository     $foundsImageRepository,
         private readonly TranslatorInterface       $translator,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
+        private readonly LoggerInterface           $logger,
+        private readonly LocalGemarkungService     $localGemarkungService,
     ) {
         parent::__construct();
     }
@@ -62,7 +66,7 @@ class FoundsController extends FinderAbstractController
             $errors = [];
             $successCount = 0;
             $maxFileSize = 10 * 1024 * 1024; // 10MB
-            $allowedTypes = ['image/jpeg', 'image/jpg'];
+            $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic'];
 
             foreach($uploadedFiles as $uploadedFile) {
                 $fileName = $uploadedFile->getClientOriginalName();
@@ -89,6 +93,15 @@ class FoundsController extends FinderAbstractController
                 try {
                     // Temporärer Upload für EXIF-Prüfung
                     $tempFilePath = $this->handleFileUpload($uploadedFile);
+
+                    // Prüfe, ob es sich wirklich um ein Bild handelt
+                    if (false === @getimagesize($tempFilePath)) {
+                        $errors[$fileName][] = $this->translator->trans('notAnImage', [
+                            '%filename%' => $fileName
+                        ], 'founds');
+                        $this->safeUnlink($tempFilePath);
+                        continue;
+                    }
                     
                     // Extrahiere und validiere EXIF-Daten
                     $exifData = $this->imageService->extractExifData($tempFilePath);
@@ -96,10 +109,7 @@ class FoundsController extends FinderAbstractController
                     
                     if (!empty($validationErrors)) {
                         $errors[$fileName] = array_merge($errors[$fileName] ?? [], $validationErrors);
-                        // Lösche die temporäre Datei
-                        if (file_exists($tempFilePath)) {
-                            unlink($tempFilePath);
-                        }
+                        $this->safeUnlink($tempFilePath);
                         continue;
                     }
 
@@ -136,30 +146,61 @@ class FoundsController extends FinderAbstractController
                         
                     } catch (Exception $e) {
                         $errors[$fileName][] = $e->getMessage();
-                        if (file_exists($tempFilePath)) {
-                            unlink($tempFilePath);
-                        }
+                        $this->safeUnlink($tempFilePath);
+                        // Logging für kritische Fehler
+                        $this->logger->error('Fehler beim Verarbeiten des Bildes: ' . $e->getMessage());
                     }
 
                 } catch (Exception $e) {
                     $errors[$fileName][] = $e->getMessage();
-                    if ($tempFilePath && file_exists($tempFilePath)) {
-                        unlink($tempFilePath);
-                    }
+                    $this->safeUnlink($tempFilePath);
+                    // Logging für kritische Fehler
+                    $this->logger->error('Fehler beim Upload: ' . $e->getMessage());
                 }
             }
 
             // Zeige Erfolgs- und Fehlermeldungen
             if($successCount > 0) {
+                // Erfolgsmeldung nur mit Anzahl der hochgeladenen Bilder
                 $this->addFlash(
                     'success', 
                     $this->translator->trans('photosUploadSuccess', 
                     ['%count%' => $successCount], 
                     'founds')
                 );
+                
+                // Bei erfolgreichem Upload zur Bildliste weiterleiten
+                return $this->redirectToRoute('image_list');
             }
 
             if (!empty($errors)) {
+                // Zeige eine allgemeine Fehlermeldung, wenn alle Uploads fehlschlagen
+                if ($successCount === 0) {
+                    $this->addFlash('error', $this->translator->trans('uploadAllFailed', [], 'founds'));
+                } else {
+                    // Teilweise erfolgreich: Zeige Erfolgsmeldung und Fehlermeldungen
+                    $this->addFlash(
+                        'success', 
+                        $this->translator->trans('uploadPartialSuccess', 
+                        ['%count%' => $successCount], 
+                        'founds')
+                    );
+                    
+                    // Zeige Fehlermeldungen für fehlgeschlagene Uploads
+                    foreach($errors as $fileName => $fileErrors) {
+                        $errorMessage = "<strong>$fileName</strong><ul class='error-list'>";
+                        foreach($fileErrors as $error) {
+                            $errorMessage .= "<li>$error</li>";
+                        }
+                        $errorMessage .= "</ul>";
+                        $this->addFlash('error', $errorMessage);
+                    }
+                    
+                    // Weiterleitung zur Bildliste bei teilweisem Erfolg
+                    return $this->redirectToRoute('image_list');
+                }
+                
+                // Nur Fehler, keine Erfolge
                 foreach($errors as $fileName => $fileErrors) {
                     $errorMessage = "<strong>$fileName</strong><ul class='error-list'>";
                     foreach($fileErrors as $error) {
@@ -168,8 +209,12 @@ class FoundsController extends FinderAbstractController
                     $errorMessage .= "</ul>";
                     $this->addFlash('error', $errorMessage);
                 }
+                
+                // Bei Fehlern auf der Upload-Seite bleiben
+                return $this->redirectToRoute('photo_upload');
             }
 
+            // Falls weder Erfolg noch Fehler (sollte nicht vorkommen)
             return $this->redirectToRoute('photo_upload');
         }
 
@@ -265,14 +310,28 @@ class FoundsController extends FinderAbstractController
     }
 
     /**
+     * Löscht eine Datei sicher, falls sie existiert
+     */
+    private function safeUnlink(?string $filePath): void
+    {
+        if ($filePath && file_exists($filePath)) {
+            unlink($filePath);
+        }
+    }
+
+    /**
      * @throws Exception
      */
     private function getLocationData(GeoService $geoService, float $latitude, float $longitude): array
     {
         try {
             return $geoService->getLocationData($latitude, $longitude) ?? [];
-        }
-        catch(Exception) {
+        } catch(Exception $e) {
+            $this->logger->error('Fehler bei der Standortbestimmung: ' . $e->getMessage(), [
+                'latitude' => $latitude,
+                'longitude' => $longitude
+            ]);
+            $this->addFlash('error', $this->translator->trans('noLocation', [], 'founds'));
             throw new Exception($this->translator->trans('noLocation', [], 'founds'));
         }
     }
@@ -286,69 +345,124 @@ class FoundsController extends FinderAbstractController
         bool        $isPublic,
     ): void {
 
-        $latitude       = $exifData['latitude'] ?? 0.0;
-        $longitude      = $exifData['longitude'] ?? 0.0;
-        $distance       = NULL;
-        $church         = NULL;
-        $town           = NULL;
-        $nearestChurch  = $this->geoService->findNearestChurch($latitude, $longitude);
-        $nearestTown    = $this->geoService->getNearestTown($latitude, $longitude);
+        $latitude  = $exifData['latitude'] ?? 0.0;
+        $longitude = $exifData['longitude'] ?? 0.0;
+        $distanceChurch = null;
+        $distanceTown = null;
+        $church = null;
+        $town = null;
+        $churchOrCenterName = 'unbekannt';
+        $distance = null;
 
-        $distanceChurch = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
-        $distanceTown   = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
+        $nearestChurch = $this->geoService->findNearestChurch($latitude, $longitude);
+        $nearestTown   = $this->geoService->getNearestTown($latitude, $longitude);
 
-        if($nearestChurch !== NULL) {
-            $distanceChurch = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
-            $church         = 'Kirche: ' . $nearestChurch['name'];
+        // Distanzen nur berechnen, wenn Ziel existiert
+        if ($nearestChurch && isset($nearestChurch['latitude'], $nearestChurch['longitude'])) {
+            try {
+                $distanceChurch = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
+                $church = 'Kirche: ' . $nearestChurch['name'];
+            } catch (\Throwable $e) {
+                $distanceChurch = null;
+                $this->logger->warning('Fehler bei Distanzberechnung zur Kirche: ' . $e->getMessage());
+            }
         }
-        if($nearestTown !== NULL) {
-            $distanceTown = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
-            $town         = 'Ort: ' . $nearestTown['name'];
+        if ($nearestTown && isset($nearestTown['latitude'], $nearestTown['longitude'])) {
+            try {
+                $distanceTown = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
+                $town = 'Ort: ' . $nearestTown['name'];
+            } catch (\Throwable $e) {
+                $distanceTown = null;
+                $this->logger->warning('Fehler bei Distanzberechnung zum Ort: ' . $e->getMessage());
+            }
         }
 
-
-        if($distanceChurch < $distanceTown) {
+        // Entscheide, was näher ist
+        if ($distanceChurch !== null && ($distanceTown === null || $distanceChurch < $distanceTown)) {
             $churchOrCenterName = $church;
-            $distance           = $distanceChurch;
-        } elseif($distanceChurch > $distanceTown) {
+            $distance = $distanceChurch;
+        } elseif ($distanceTown !== null && ($distanceChurch === null || $distanceTown < $distanceChurch)) {
             $churchOrCenterName = $town;
-            $distance           = $distanceTown;
+            $distance = $distanceTown;
         } else {
-            $churchOrCenterName = 'unbekannt';
             $this->addFlash('error', $this->translator->trans('noChurchOrTownFound', [], 'founds'));
         }
 
-        if($distance === NULL) {
+        if ($distance === null) {
             $this->addFlash('error', $this->translator->trans('noValidDistance', [], 'founds'));
         }
 
+        // Robustere EXIF-Datumskonvertierung
+        $dateTime = new \DateTime();
+        if (isset($exifData['DateTime'])) {
+            $dt = \DateTime::createFromFormat('Y:m:d H:i:s', $exifData['DateTime']);
+            if ($dt !== false) {
+                $dateTime = $dt;
+            } else {
+                $this->logger->warning('Ungültiges EXIF-Datum: ' . $exifData['DateTime']);
+            }
+        }
+
+        // Adressdaten übersichtlich zuweisen
+        $address = $locationData['address'] ?? [];
         $photo->latitude                 = $latitude;
         $photo->longitude                = $longitude;
-        $photo->cameraModel              = $exifData['camera_model'] ?? NULL;
-        $photo->exposureTime             = $exifData['exposure_time'] ?? NULL;
-        $photo->fNumber                  = $exifData['f_number'] ?? NULL;
-        $photo->iso                      = $exifData['iso'] ?? NULL;
-        $photo->dateTime                 = isset($exifData['DateTime'])
-            ? DateTime::createFromFormat('Y:m:d H:i:s', $exifData['DateTime'])
-            : new DateTime();
+        $photo->cameraModel              = $exifData['camera_model'] ?? null;
+        $photo->exposureTime             = $exifData['exposure_time'] ?? null;
+        $photo->fNumber                  = $exifData['f_number'] ?? null;
+        $photo->iso                      = $exifData['iso'] ?? null;
+        $photo->dateTime                 = $dateTime;
         $photo->filePath                 = basename($filePath);
         $photo->username                 = $this->getUserFullName();
-        $photo->createdAt                = new DateTime();
+        $photo->createdAt                = new \DateTime();
         $photo->utmX                     = $utmCoordinates['utmX'];
         $photo->utmY                     = $utmCoordinates['utmY'];
         $photo->parcel                   = $locationData['parcel'] ?? 'unbekannt';
-        $photo->district                 = $locationData['address']['city'] ?? NULL;
-        $photo->county                   = $locationData['address']['county'] ?? NULL;
-        $photo->state                    = $locationData['address']['state'] ?? NULL;
-        $photo->nearestStreet            = $locationData['address']['road'] ?? NULL;
+        $photo->district                 = $address['city'] ?? null;
+        $photo->county                   = $address['county'] ?? null;
+        $photo->state                    = $address['state'] ?? null;
+        $photo->nearestStreet            = $address['road'] ?? null;
         $photo->nearestTown              = $town;
         $photo->distanceToChurchOrCenter = $distance;
         $photo->churchOrCenterName       = $churchOrCenterName;
         $photo->setUser($this->getUser());
-        /** @noinspection PhpUndefinedMethodInspection */
         $photo->user_uuid = $this->getUser()->getUuid();
+        $photo->username = $this->getUser()->getEmail();
         $photo->isPublic  = $isPublic;
 
+        // Gemarkung und Flurstück ermitteln: erst lokal, dann API als Fallback
+        $gemarkung = null;
+        $flurstueck = null;
+        
+        if (!empty($utmCoordinates['utmX']) && !empty($utmCoordinates['utmY'])) {
+            $result = $this->localGemarkungService->findGemarkungAndFlurstueckByUTM($utmCoordinates['utmX'], $utmCoordinates['utmY']);
+            $gemarkung = $result['gemarkung'];
+            $flurstueck = $result['flurstueck'];
+            
+            $this->logger->info('Lokale Gemarkung- und Flurstück-Suche', [
+                'utmX' => $utmCoordinates['utmX'],
+                'utmY' => $utmCoordinates['utmY'],
+                'gemarkung' => $gemarkung,
+                'flurstueck' => $flurstueck
+            ]);
+            
+            if (!$gemarkung) {
+                // API als Fallback nur für Gemarkung
+                $gemarkung = $this->geoService->getGemarkungByUTM($utmCoordinates['utmX'], $utmCoordinates['utmY']);
+                $this->logger->info('Gemarkung-API Rückgabe', [
+                    'utmX' => $utmCoordinates['utmX'],
+                    'utmY' => $utmCoordinates['utmY'],
+                    'gemarkung' => $gemarkung
+                ]);
+            }
+        } else {
+            $this->addFlash('warning', $this->translator->trans('noUtmCoordinates', [], 'founds'));
+        }
+        
+        $photo->gemarkungName = $gemarkung['name'] ?? null;
+        $photo->gemarkungNummer = $gemarkung['number'] ?? null;
+        $photo->flurstueckName = $flurstueck['name'] ?? null;
+        $photo->flurstueckNummer = $flurstueck['number'] ?? null;
     }
 
 
@@ -400,6 +514,10 @@ class FoundsController extends FinderAbstractController
                     ? number_format($image->utmX, 2, '.', '') . ', ' . number_format($image->utmY, 2, '.', '')
                     : null,
                 'csrf' => $this->csrfTokenManager->getToken('delete' . $image->getId()),
+                'gemarkungName' => $image->gemarkungName,
+                'gemarkungNummer' => $image->gemarkungNummer,
+                'flurstueckName' => $image->flurstueckName,
+                'flurstueckNummer' => $image->flurstueckNummer,
             ];
         }
 
@@ -625,6 +743,76 @@ class FoundsController extends FinderAbstractController
         return $this->json([
             'success' => true,
             'message' => $this->translator->trans('delete.success', [], 'founds')
+        ]);
+    }
+
+    #[Route('/found/bulk-delete', name: 'found_bulk_delete', methods: ['POST'])]
+    public function bulkDelete(
+        Request                   $request,
+        CsrfTokenManagerInterface $csrfTokenManager,
+    ): Response {
+        $this->denyAccessUnlessGranted('ROLE_USER');
+
+        $ids = $request->request->all('ids');
+        $token = $request->request->get('_token');
+
+        if (empty($ids)) {
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('bulkDelete.noImagesSelected', [], 'founds')
+            ], 400);
+        }
+
+        // CSRF-Token validieren
+        if (!$this->isCsrfTokenValid('bulk_delete', $token)) {
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('delete.invalidCSRFToken', [], 'founds')
+            ], 400);
+        }
+
+        $deletedCount = 0;
+        $errors = [];
+        $uploadDirectory = $this->getParameter('uploads_directory');
+
+        foreach ($ids as $id) {
+            $entity = $this->foundsImageRepository->find($id);
+            
+            if (!$entity) {
+                $errors[] = "Bild mit ID $id nicht gefunden.";
+                continue;
+            }
+
+            // Prüfe, ob der Benutzer das Recht hat, dieses Bild zu löschen
+            if ($entity->user_uuid !== $this->getUser()->getUuid()) {
+                $errors[] = "Keine Berechtigung zum Löschen von Bild $id.";
+                continue;
+            }
+
+            // Lösche die Datei
+            $filePath = $uploadDirectory . '/' . $entity->filePath;
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            // Lösche aus der Datenbank
+            $this->foundsImageRepository->remove($entity, false);
+            $deletedCount++;
+        }
+
+        // Flush alle Änderungen
+        $this->foundsImageRepository->getEntityManager()->flush();
+
+        $message = "$deletedCount Bilder wurden erfolgreich gelöscht.";
+        if (!empty($errors)) {
+            $message .= " Fehler: " . implode(', ', $errors);
+        }
+
+        return $this->json([
+            'success' => true,
+            'message' => $message,
+            'deletedCount' => $deletedCount,
+            'errors' => $errors
         ]);
     }
 

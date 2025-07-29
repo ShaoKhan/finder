@@ -22,10 +22,19 @@ import './bootstrap';
 // Import delete modal functionality
 import { initializeDeleteModal } from './js/delete-modal';
 
+// Import bulk delete functionality
+import { initializeBulkDelete } from './js/bulk-delete';
+
+// Import flash messages functionality
+import './js/flash-messages';
+
 // Initialize delete modal when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('deleteModal')) {
         initializeDeleteModal();
     }
+    
+    // Initialize bulk delete functionality
+    initializeBulkDelete();
 });
 
