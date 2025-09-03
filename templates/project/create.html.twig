@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'projects' %}
+
+{% block title %}{{ 'new_project'|trans }}{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-plus-circle me-2"></i>{{ 'projects.new_project'|trans }}
+                    </h1>
+                </div>
+                <div class="card-body">
+                    {{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+                        <div class="mb-3">
+                            {{ form_label(form.name) }}
+                            {{ form_widget(form.name, {'attr': {'id': 'project_name'}}) }}
+                            {{ form_errors(form.name) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_label(form.description) }}
+                            {{ form_widget(form.description) }}
+                            {{ form_errors(form.description) }}
+                            <div class="form-text">
+                                {{ 'projects.description_help'|trans }}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form_label(form.users) }}
+                            {{ form_widget(form.users) }}
+                            {{ form_errors(form.users) }}
+                            <div class="form-text">
+                                {{ 'projects.users_help'|trans }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ path('project_list') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>{{ 'projects.back_to_overview'|trans }}
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>{{ 'projects.create_project'|trans }}
+                            </button>
+                        </div>
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('project-validation') }}
+{% endblock %}
+{% endblock %}

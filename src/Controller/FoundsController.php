@@ -6,8 +6,11 @@ namespace App\Controller;
 
 
 use App\Entity\FoundsImage;
+use App\Entity\Project;
+use App\Entity\User;
 use App\Form\FoundsImageUploadType;
 use App\Repository\FoundsImageRepository;
+use App\Repository\ProjectRepository;
 use App\Service\GeoService;
 use App\Service\ImageService;
 use App\Service\PdfService;
@@ -31,6 +34,7 @@ class FoundsController extends FinderAbstractController
         private readonly GeoService                $geoService,
         private readonly ImageService              $imageService,
         private readonly FoundsImageRepository     $foundsImageRepository,
+        private readonly ProjectRepository         $projectRepository,
         private readonly TranslatorInterface       $translator,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly LoggerInterface           $logger,
@@ -426,8 +430,10 @@ class FoundsController extends FinderAbstractController
         $photo->distanceToChurchOrCenter = $distance;
         $photo->churchOrCenterName       = $churchOrCenterName;
         $photo->setUser($this->getUser());
-        $photo->user_uuid = $this->getUser()->getUuid();
-        $photo->username = $this->getUser()->getEmail();
+        /** @var User $user */
+        $user = $this->getUser();
+        $photo->user_uuid = $user?->getUuid();
+        $photo->username = $user?->getEmail();
         $photo->isPublic  = $isPublic;
 
         // Gemarkung und Flurstück ermitteln: erst lokal, dann API als Fallback
@@ -524,12 +530,16 @@ class FoundsController extends FinderAbstractController
         // Sortiere die Gruppen nach Datum (neueste zuerst)
         krsort($groupedImages);
 
+        // Hole alle Projekte des Benutzers für das Dropdown
+        $projects = $this->projectRepository->findByUser($this->getUser());
+
         return $this->render('founds/list.html.twig', [
             'pagination' => $pagination,
             'groupedImages' => $groupedImages,
             'sort' => $sortField,
             'order' => $sortOrder,
             'limit' => $limit,
+            'projects' => $projects,
         ]);
     }
 
@@ -784,7 +794,9 @@ class FoundsController extends FinderAbstractController
             }
 
             // Prüfe, ob der Benutzer das Recht hat, dieses Bild zu löschen
-            if ($entity->user_uuid !== $this->getUser()->getUuid()) {
+            /** @var User $user */
+            $user = $this->getUser();
+            if ($entity->user_uuid !== $user?->getUuid()) {
                 $errors[] = "Keine Berechtigung zum Löschen von Bild $id.";
                 continue;
             }
@@ -812,6 +824,96 @@ class FoundsController extends FinderAbstractController
             'success' => true,
             'message' => $message,
             'deletedCount' => $deletedCount,
+            'errors' => $errors
+        ]);
+    }
+
+    #[Route('/found/bulk-assign-project', name: 'found_bulk_assign_project', methods: ['POST'])]
+    public function bulkAssignProject(
+        Request                   $request,
+        CsrfTokenManagerInterface $csrfTokenManager,
+    ): Response {
+        $this->denyAccessUnlessGranted('ROLE_USER');
+
+        $ids = $request->request->all('ids');
+        $projectId = $request->request->get('project_id');
+        $token = $request->request->get('_token');
+
+        if (empty($ids)) {
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('bulkAssign.noImagesSelected', [], 'founds')
+            ], 400);
+        }
+
+        if (empty($projectId)) {
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('bulkAssign.noProjectSelected', [], 'founds')
+            ], 400);
+        }
+
+        // CSRF-Token validieren
+        if (!$this->isCsrfTokenValid('bulk_assign_project', $token)) {
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('delete.invalidCSRFToken', [], 'founds')
+            ], 400);
+        }
+
+        // Projekt laden und Berechtigung prüfen
+        $project = $this->projectRepository->find($projectId);
+        if (!$project) {
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('bulkAssign.projectNotFound', [], 'founds')
+            ], 404);
+        }
+
+        if (!$project->getUsers()->contains($this->getUser())) {
+            return $this->json([
+                'success' => false,
+                'message' => $this->translator->trans('bulkAssign.noProjectAccess', [], 'founds')
+            ], 403);
+        }
+
+        $assignedCount = 0;
+        $errors = [];
+
+        foreach ($ids as $id) {
+            $entity = $this->foundsImageRepository->find($id);
+            
+            if (!$entity) {
+                $errors[] = "Bild mit ID $id nicht gefunden.";
+                continue;
+            }
+
+            // Prüfe, ob der Benutzer das Recht hat, dieses Bild zu bearbeiten
+            /** @var User $user */
+            $user = $this->getUser();
+            if ($entity->user_uuid !== $user?->getUuid()) {
+                $errors[] = "Keine Berechtigung zum Bearbeiten von Bild $id.";
+                continue;
+            }
+
+            // Weise das Bild dem Projekt zu
+            $entity->setProject($project);
+            $this->foundsImageRepository->save($entity, false);
+            $assignedCount++;
+        }
+
+        // Flush alle Änderungen
+        $this->foundsImageRepository->getEntityManager()->flush();
+
+        $message = "$assignedCount Bilder wurden erfolgreich dem Projekt '{$project->getName()}' zugeordnet.";
+        if (!empty($errors)) {
+            $message .= " Fehler: " . implode(', ', $errors);
+        }
+
+        return $this->json([
+            'success' => true,
+            'message' => $message,
+            'assignedCount' => $assignedCount,
             'errors' => $errors
         ]);
     }

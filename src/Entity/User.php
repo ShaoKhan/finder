@@ -24,8 +24,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $uuid = NULL;
 
-    public ?string $vorname = null;
-    public ?string $nachname = null;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $vorname = null;
+    
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $nachname = null;
 
     #[ORM\Column(length: 180)]
     private ?string $email = NULL;
@@ -51,9 +54,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: FoundsImage::class, mappedBy: 'user')]
     private Collection $foundsImages;
 
+    /**
+     * @var Collection<int, Project>
+     */
+    #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'users')]
+    private Collection $projects;
+
     public function __construct()
     {
         $this->foundsImages = new ArrayCollection();
+        $this->projects = new ArrayCollection();
         $this->uuid = Uuid::v4()->toRfc4122();
     }
 
@@ -70,6 +80,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUuid(?string $uuid): static
     {
         $this->uuid = $uuid;
+        return $this;
+    }
+
+    public function getVorname(): ?string
+    {
+        return $this->vorname;
+    }
+
+    public function setVorname(?string $vorname): static
+    {
+        $this->vorname = $vorname;
+        return $this;
+    }
+
+    public function getNachname(): ?string
+    {
+        return $this->nachname;
+    }
+
+    public function setNachname(?string $nachname): static
+    {
+        $this->nachname = $nachname;
         return $this;
     }
 
@@ -197,6 +229,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             if ($foundsImage->getUser() === $this) {
                 $foundsImage->setUser(null);
             }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getProjects(): Collection
+    {
+        return $this->projects;
+    }
+
+    public function addProject(Project $project): static
+    {
+        if (!$this->projects->contains($project)) {
+            $this->projects->add($project);
+            $project->addUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProject(Project $project): static
+    {
+        if ($this->projects->removeElement($project)) {
+            $project->removeUser($this);
         }
 
         return $this;

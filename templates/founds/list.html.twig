@@ -6,6 +6,8 @@
     {{ parent() }}
     <meta name="delete-path" content="{{ path('found_delete', { id: 'PLACEHOLDER' }) }}">
     <meta name="csrf-token" content="{{ csrf_token('bulk_delete') }}">
+    <meta name="assign-project-path" content="{{ path('found_bulk_assign_project') }}">
+    <meta name="assign-project-csrf-token" content="{{ csrf_token('bulk_assign_project') }}">
 {% endblock %}
 
 {% block stylesheets %}
@@ -90,30 +92,41 @@
                             </div>
                         </div>
                         
-                        <!-- Mehrfach-Löschfunktion für diese Datumsgruppe -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3 mb-3">
                             <div class="form-check">
                                 <input class="form-check-input date-group-select-all" type="checkbox" 
                                        data-date-group="{{ dateKey }}">
                                 <label class="form-check-label" for="selectAll">
                                     {{ 'bulkDelete.selectAll'|trans }}
                                 </label>
-                                <button type="button" class="btn btn-danger btn-sm date-group-delete-btn" 
-                                    data-date-group="{{ dateKey }}" disabled>
-                                    <i class="bi bi-trash3"></i> {{ 'bulkDelete.deleteSelected'|trans }}
-                                </button>
                             </div>
                             
+                            <select class="form-select form-select-sm project-select" 
+                                    data-date-group="{{ dateKey }}"
+                                    style="min-width: 150px; max-width: 200px;">
+                                <option value="">{{ 'bulkAssign.selectProject'|trans }}</option>
+                                {% for project in projects %}
+                                    <option value="{{ project.id }}">{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                            
+                            <button type="button" class="btn btn-primary btn-sm date-group-assign-btn" 
+                                data-date-group="{{ dateKey }}" disabled>
+                                <i class="bi bi-folder-plus"></i> {{ 'projects.assign'|trans([], 'projects') }}
+                            </button>
+                            
+                            <button type="button" class="btn btn-danger btn-sm date-group-delete-btn" 
+                                data-date-group="{{ dateKey }}" disabled>
+                                <i class="bi bi-trash3"></i> {{ 'delete_found'|trans([], 'founds') }}
+                            </button>
                         </div>
                         
                         {% for image in group.images %}
                             <div class="row align-items-center border rounded p-1 mb-2 h-100 found-item" data-date-group="{{ dateKey }}">
-                                <!-- Checkbox für Mehrfach-Löschung -->
                                 <div class="col-12 col-md-1 text-center">
                                     <input type="checkbox" class="form-check-input image-checkbox" 
                                            value="{{ image.id }}" data-image-id="{{ image.id }}">
                                 </div>
-                                <!-- Bild -->
                                 <div class="col-12 col-md-2 text-center">
                                     <img
                                             src="{{ asset('fundbilder/' ~ image.filePath) }}"
@@ -122,7 +135,6 @@
                                             style="max-height: 200px; object-fit: cover;"><br/>
                                 </div>
 
-                                <!-- Informationen -->
                                 <div class="col-12 col-md-4">
                                     <p class="mb-1"><strong>{{ 'filter.name'|trans }}:</strong> {{ image.name|default(image.nearestTown) }}</p>
                                     <p class="mb-1">
@@ -226,6 +238,25 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans }}</button>
                     <button type="button" class="btn btn-danger" id="confirmBulkDelete">{{ 'modal.delete'|trans }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Assign Project Modal -->
+    <div class="modal fade" id="bulkAssignProjectModal" tabindex="-1" aria-labelledby="bulkAssignProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkAssignProjectModalLabel">{{ 'modal.confirmBulkProjectAssignment'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{{ 'modal.areYouSureBulkAssign'|trans({'%count%': '<span id="bulkAssignCount"></span>', '%project%': '<span id="bulkAssignProjectName"></span>'})|raw }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'modal.cancel'|trans }}</button>
+                    <button type="button" class="btn btn-primary" id="confirmBulkAssign">{{ 'modal.assign'|trans }}</button>
                 </div>
             </div>
         </div>

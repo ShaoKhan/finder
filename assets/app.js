@@ -25,6 +25,9 @@ import { initializeDeleteModal } from './js/delete-modal';
 // Import bulk delete functionality
 import { initializeBulkDelete } from './js/bulk-delete';
 
+// Import bulk assign project functionality
+import { initializeBulkAssignProject } from './js/bulk-assign-project';
+
 // Import flash messages functionality
 import './js/flash-messages';
 
@@ -36,5 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize bulk delete functionality
     initializeBulkDelete();
+    
+    // Initialize bulk assign project functionality
+    initializeBulkAssignProject();
 });
 

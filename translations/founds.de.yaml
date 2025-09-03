@@ -1,4 +1,5 @@
 search: 'Suchen'
+delete_found: 'Fundmeldung löschen'
 noCoords: 'keine Koordinaten verfügbar'
 noUTM: 'UTM Koordinaten konnten nicht berechnet werden'
 noLocation: 'keine Standort Daten gefunden'
@@ -55,8 +56,11 @@ modal:
   areYouSure: 'Du bist im Begriff die Fundmeldung sowie das Bild / die Bilder %name% unwiderruflich zu löschen! Bist du sicher?'
   confirmBulkDeletion: 'Mehrfach-Löschung bestätigen'
   areYouSureBulk: 'Du bist im Begriff %count% Bild(er) unwiderruflich zu löschen! Bist du sicher?'
+  confirmBulkProjectAssignment: 'Projektzuordnung bestätigen'
+  areYouSureBulkAssign: 'Du bist im Begriff %count% Bild(er) dem Projekt "%project%" zuzuordnen. Bist du sicher?'
   cancel: 'Abbrechen'
   delete: 'Löschen'
+  assign: 'Zuordnen'
 
 delete:
   foundNotFound: 'Die Fundmeldung konnte nicht gefunden werden ;)'
@@ -82,3 +86,17 @@ bulkDelete:
   notFound: 'Bild mit ID %id% nicht gefunden.'
   deleting: 'Löschen...'
   noImagesSelected: 'Keine Bilder zum Löschen ausgewählt.'
+
+# Mehrfach-Projektzuordnung
+bulkAssign:
+  selectProject: 'Projekt auswählen'
+  assignToProject: 'Zu Projekt zuordnen'
+  noImagesSelected: 'Keine Bilder zur Projektzuordnung ausgewählt.'
+  noProjectSelected: 'Bitte wählen Sie ein Projekt aus.'
+  projectNotFound: 'Das ausgewählte Projekt wurde nicht gefunden.'
+  noProjectAccess: 'Sie haben keinen Zugriff auf das ausgewählte Projekt.'
+  success: '%count% Bilder wurden erfolgreich dem Projekt "%project%" zugeordnet.'
+  error: 'Ein Fehler ist bei der Projektzuordnung aufgetreten'
+  noPermission: 'Keine Berechtigung zum Bearbeiten von Bild %id%.'
+  notFound: 'Bild mit ID %id% nicht gefunden.'
+  assigning: 'Zuordnen...'

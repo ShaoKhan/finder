@@ -23,6 +23,18 @@
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle
+                         {% if app.request.attributes.get('_route') == 'project_list' or app.request.attributes.get('_route') == 'project_create' %} active {% endif %}" href="#" id="projectDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">Projekte</a>
+                        <ul class="dropdown-menu" aria-labelledby="projectDropdown">
+                            <li><a class="dropdown-item" href="{{ path('project_list') }}">Projekte anzeigen</a></li>
+                            <li>
+                                <a class="dropdown-item {% if app.request.attributes.get('_route') == 'project_create' %}active{% endif %}"
+                                   href="{{ path('project_create') }}">Projekt anlegen</a></li>
+                            
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle
                          {% if app.request.attributes.get('_route') == 'photo_upload' or app.request.attributes.get('_route') == 'image_list' %} active {% endif %}" href="#" id="navbarDropdown" role="button"
                            data-bs-toggle="dropdown" aria-expanded="false">{{ 'fundmeldungen'|trans }}</a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">

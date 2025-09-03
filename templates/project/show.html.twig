@@ -1,0 +1,475 @@
+{% extends 'base.html.twig' %}
+{% trans_default_domain 'projects' %}
+
+{% block title %}{{ 'projects.title'|trans }}{% endblock %}
+
+{% block meta %}
+    {{ parent() }}
+    <meta name="delete-path" content="{{ path('project_founds_bulk_delete', { id: project.id }) }}">
+    <meta name="csrf-token" content="{{ csrf_token('bulk_delete_project_founds') }}">
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>{{ 'projects.title'|trans }}</h1>
+                <div>
+                    <a href="{{ path('project_edit', {'id': project.id}) }}" class="btn btn-secondary me-2">
+                        <i class="bi bi-pencil me-2"></i>{{ 'projects.edit_project'|trans }}
+                    </a>
+                    <a href="{{ path('project_list') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>{{ 'projects.back_to_overview'|trans }}
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i>{{ 'projects.project_details'|trans }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if project.description %}
+                                <p class="card-text">{{ project.description }}</p>
+                            {% else %}
+                                <p class="text-muted">{{ 'projects.no_description'|trans }}</p>
+                            {% endif %}
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                                                            <small class="text-muted">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            {{ 'projects.created_at'|trans }}: {{ project.createdAt|date('d.m.Y H:i') }}
+                                        </small>
+                                </div>
+                                {% if project.updatedAt %}
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>
+                                            {{ 'projects.last_updated'|trans }}: {{ project.updatedAt|date('d.m.Y H:i') }}
+                                        </small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-collection me-2"></i>{{ 'projects.project_finds'|trans }} ({{ project.foundsImages|length }})
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if project.foundsImages is empty %}
+                                <p class="text-muted">{{ 'projects.no_finds'|trans }}</p>
+                            {% else %}
+                                <!-- Bulk Delete Controls -->
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllFounds">
+                                        <label class="form-check-label" for="selectAllFounds">
+                                            {{ 'projects.select_all_finds'|trans }}
+                                        </label>
+                                        <button type="button" class="btn btn-danger btn-sm ms-3" id="bulkDeleteBtn" disabled>
+                                            <i class="bi bi-trash3"></i> {{ 'projects.delete_selected'|trans }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    {% for found in project.foundsImages %}
+                                        <div class="col-md-4 mb-3 found-item" data-found-id="{{ found.id }}">
+                                            <div class="card position-relative">
+                                                <!-- Checkbox für Mehrfach-Löschung -->
+                                                <div class="position-absolute top-0 start-0 m-2">
+                                                    <input type="checkbox" class="form-check-input found-checkbox" 
+                                                           value="{{ found.id }}" data-found-id="{{ found.id }}">
+                                                </div>
+                                                
+                                                {% if found.filePath %}
+                                                    <img src="{{ asset('fundbilder/' ~ found.filePath) }}" 
+                                                         class="card-img-top" 
+                                                         alt="Fundbild"
+                                                         style="height: 150px; object-fit: cover;">
+                                                {% else %}
+                                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                                         style="height: 150px;">
+                                                        <i class="bi bi-image fs-1 text-muted"></i>
+                                                    </div>
+                                                {% endif %}
+                                                
+                                                <div class="card-body p-2">
+                                                    <h6 class="card-title">
+                                                        {{ found.name|default(found.nearestTown|default('Unbekannt')) }}
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-calendar me-1"></i>
+                                                        {{ found.createdAt|date('d.m.Y H:i') }}
+                                                    </small>
+                                                    {% if found.state %}
+                                                        <br><small class="text-muted">
+                                                            <i class="bi bi-geo-alt me-1"></i>
+                                                            {{ found.state }}{% if found.county %}, {{ found.county }}{% endif %}
+                                                        </small>
+                                                    {% endif %}
+                                                    {% if found.gemarkungName %}
+                                                        <br><small class="text-muted">
+                                                            <i class="bi bi-map me-1"></i>
+                                                            {{ found.gemarkungName }}{% if found.gemarkungNummer %} ({{ found.gemarkungNummer }}){% endif %}
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <div class="card-footer bg-transparent p-2">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-person me-1"></i>
+                                                            {{ found.username|default('Unbekannt') }}
+                                                        </small>
+                                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                                onclick="deleteSingleFound({{ found.id }}, '{{ found.name|default(found.nearestTown|default('Unbekannt'))|e('js') }}')">
+                                                            <i class="bi bi-trash3"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-people me-2"></i>{{ 'projects.project_members'|trans }} ({{ project.users|length }})
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for user in project.users %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="avatar-placeholder me-3">
+                                        <i class="bi bi-person-circle fs-4"></i>
+                                    </div>
+                                    <div>
+                                        {% if user.getVorname() and user.getNachname() %}
+                                            <strong>{{ user.getVorname() }} {{ user.getNachname() }}</strong><br>
+                                        {% endif %}
+                                        <small class="text-muted">{{ user.email }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear me-2"></i>{{ 'projects.actions'|trans }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="#" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-upload me-2"></i>{{ 'projects.add_find'|trans }}
+                                </a>
+                                <a href="#" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-download me-2"></i>{{ 'projects.export_project'|trans }}
+                                </a>
+                                <form method="post" action="{{ path('project_delete', {'id': project.id}) }}" 
+                                      onsubmit="return confirm('Sind Sie sicher, dass Sie dieses Projekt löschen möchten?')"
+                                      class="d-grid">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ project.id) }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash me-2"></i>{{ 'projects.delete_project'|trans }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Modal -->
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkDeleteModalLabel">{{ 'projects.confirm_bulk_deletion'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ 'projects.are_you_sure_bulk_delete'|trans({'%count%': '<span id="bulkDeleteCount"></span>'})|raw }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'projects.cancel'|trans }}</button>
+                <button type="button" class="btn btn-danger" id="confirmBulkDelete">{{ 'projects.delete'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Single Delete Modal -->
+<div class="modal fade" id="singleDeleteModal" tabindex="-1" aria-labelledby="singleDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="singleDeleteModalLabel">{{ 'projects.confirm_deletion'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ 'projects.are_you_sure_delete'|trans({'%name%': '<span id="singleDeleteName"></span>'})|raw }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'projects.cancel'|trans }}</button>
+                <button type="button" class="btn btn-danger" id="confirmSingleDelete">{{ 'projects.delete'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // Bulk Delete Funktionalität
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllCheckbox = document.getElementById('selectAllFounds');
+            const foundCheckboxes = document.querySelectorAll('.found-checkbox');
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const confirmBulkDeleteBtn = document.getElementById('confirmBulkDelete');
+            const confirmSingleDeleteBtn = document.getElementById('confirmSingleDelete');
+
+            // Select All Funktionalität
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    foundCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateBulkDeleteButton();
+                });
+            }
+
+            // Einzelne Checkboxen
+            foundCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateSelectAllCheckbox();
+                    updateBulkDeleteButton();
+                });
+            });
+
+            // Bulk Delete Button
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.addEventListener('click', function() {
+                    const selectedIds = getSelectedFoundIds();
+                    if (selectedIds.length === 0) {
+                        alert('Bitte wählen Sie mindestens eine Fundmeldung aus.');
+                        return;
+                    }
+                    showBulkDeleteModal(selectedIds);
+                });
+            }
+
+            // Confirm Bulk Delete
+            if (confirmBulkDeleteBtn) {
+                confirmBulkDeleteBtn.addEventListener('click', function() {
+                    const selectedIds = this.getAttribute('data-selected-ids');
+                    if (selectedIds) {
+                        performBulkDelete(selectedIds.split(','));
+                    }
+                    
+                    // Modal schließen
+                    const bulkDeleteModal = document.getElementById('bulkDeleteModal');
+                    const modal = window.bootstrap.Modal.getInstance(bulkDeleteModal);
+                    modal.hide();
+                });
+            }
+
+            // Confirm Single Delete
+            if (confirmSingleDeleteBtn) {
+                confirmSingleDeleteBtn.addEventListener('click', function() {
+                    const foundId = this.getAttribute('data-found-id');
+                    if (foundId) {
+                        performBulkDelete([foundId]);
+                    }
+                    
+                    // Modal schließen
+                    const singleDeleteModal = document.getElementById('singleDeleteModal');
+                    const modal = window.bootstrap.Modal.getInstance(singleDeleteModal);
+                    modal.hide();
+                });
+            }
+
+            function updateSelectAllCheckbox() {
+                const checkedCount = document.querySelectorAll('.found-checkbox:checked').length;
+                const totalCount = foundCheckboxes.length;
+                
+                if (checkedCount === 0) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                } else if (checkedCount === totalCount) {
+                    selectAllCheckbox.checked = true;
+                    selectAllCheckbox.indeterminate = false;
+                } else {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = true;
+                }
+            }
+
+            function updateBulkDeleteButton() {
+                const selectedCount = getSelectedFoundIds().length;
+                bulkDeleteBtn.disabled = selectedCount === 0;
+                bulkDeleteBtn.innerHTML = `<i class="bi bi-trash3"></i> ${selectedCount} ausgewählte entfernen`;
+            }
+
+            function getSelectedFoundIds() {
+                const selectedCheckboxes = document.querySelectorAll('.found-checkbox:checked');
+                return Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
+            }
+
+            function showBulkDeleteModal(selectedIds) {
+                const bulkDeleteModal = document.getElementById('bulkDeleteModal');
+                const bulkDeleteCount = document.getElementById('bulkDeleteCount');
+                const confirmBulkDeleteBtn = document.getElementById('confirmBulkDelete');
+
+                if (!bulkDeleteModal || !bulkDeleteCount || !confirmBulkDeleteBtn) {
+                    return;
+                }
+
+                // Anzahl der ausgewählten Fundmeldungen anzeigen
+                bulkDeleteCount.textContent = selectedIds.length;
+
+                // Selected IDs für den Confirm Button setzen
+                confirmBulkDeleteBtn.setAttribute('data-selected-ids', selectedIds.join(','));
+
+                // Modal anzeigen
+                const modal = new window.bootstrap.Modal(bulkDeleteModal);
+                modal.show();
+            }
+
+            function performBulkDelete(ids) {
+                // CSRF-Token generieren
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                if (!csrfToken) {
+                    alert('CSRF-Token nicht gefunden. Bitte laden Sie die Seite neu.');
+                    return;
+                }
+
+                // Button deaktivieren während des Requests
+                bulkDeleteBtn.disabled = true;
+                bulkDeleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Entfernen...';
+
+                // FormData für den Request erstellen
+                const formData = new FormData();
+                ids.forEach(id => formData.append('ids[]', id));
+                formData.append('_token', csrfToken);
+
+                // AJAX-Request
+                fetch('{{ path('project_founds_bulk_delete', { id: project.id }) }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Erfolgreich entfernt - ausgewählte Elemente entfernen
+                        ids.forEach(id => {
+                            const foundItem = document.querySelector(`.found-item[data-found-id="${id}"]`);
+                            if (foundItem) {
+                                foundItem.remove();
+                            }
+                        });
+
+                        // Prüfen ob noch Fundmeldungen vorhanden sind
+                        const remainingItems = document.querySelectorAll('.found-item');
+                        if (remainingItems.length === 0) {
+                            // Keine Fundmeldungen mehr vorhanden
+                            const cardBody = document.querySelector('.card-body');
+                            if (cardBody) {
+                                cardBody.innerHTML = '<p class="text-muted">{{ "projects.no_finds"|trans }}</p>';
+                            }
+                        }
+
+                        // Erfolgsmeldung anzeigen
+                        showAlert('success', data.message);
+
+                        // Checkboxen zurücksetzen
+                        selectAllCheckbox.checked = false;
+                        selectAllCheckbox.indeterminate = false;
+                        foundCheckboxes.forEach(checkbox => {
+                            checkbox.checked = false;
+                        });
+                        
+                        // Bulk Delete Button zurücksetzen
+                        bulkDeleteBtn.disabled = true;
+                        bulkDeleteBtn.innerHTML = `<i class="bi bi-trash3"></i> 0 ausgewählte entfernen`;
+                    } else {
+                        showAlert('danger', data.message || 'Ein Fehler ist beim Entfernen aufgetreten');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fehler beim Entfernen:', error);
+                    showAlert('danger', 'Ein Fehler ist beim Entfernen aufgetreten');
+                })
+                .finally(() => {
+                    // Button-Status zurücksetzen
+                    updateBulkDeleteButton();
+                });
+            }
+
+            function showAlert(type, message) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+                
+                // Finde den Header-Container
+                const headerContainer = document.querySelector('.d-flex.justify-content-between.align-items-center.mb-4');
+                if (!headerContainer) {
+                    return;
+                }
+                
+                // Füge das Alert nach dem Header-Container ein
+                headerContainer.insertAdjacentElement('afterend', alertDiv);
+                
+                // Alert nach 5 Sekunden ausblenden
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        });
+
+        // Single Delete Funktionalität
+        function deleteSingleFound(foundId, foundName) {
+            const singleDeleteModal = document.getElementById('singleDeleteModal');
+            const singleDeleteName = document.getElementById('singleDeleteName');
+            const confirmSingleDeleteBtn = document.getElementById('confirmSingleDelete');
+
+            if (!singleDeleteModal || !singleDeleteName || !confirmSingleDeleteBtn) {
+                return;
+            }
+
+            // Fundmeldungsname anzeigen
+            singleDeleteName.textContent = foundName;
+
+            // Found ID für den Confirm Button setzen
+            confirmSingleDeleteBtn.setAttribute('data-found-id', foundId);
+
+            // Modal anzeigen
+            const modal = new window.bootstrap.Modal(singleDeleteModal);
+            modal.show();
+        }
+    </script>
+{% endblock %}

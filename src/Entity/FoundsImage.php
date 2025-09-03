@@ -73,6 +73,9 @@ class FoundsImage
     #[ORM\ManyToOne(inversedBy: 'foundsImages')]
     private ?User $user = NULL;
 
+    #[ORM\ManyToOne(inversedBy: 'foundsImages')]
+    private ?Project $project = NULL;
+
     public function getName(): ?string
     {
         return $this->name;
@@ -105,6 +108,18 @@ class FoundsImage
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function getProject(): ?Project
+    {
+        return $this->project;
+    }
+
+    public function setProject(?Project $project): static
+    {
+        $this->project = $project;
 
         return $this;
     }
