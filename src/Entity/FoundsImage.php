@@ -39,6 +39,8 @@ class FoundsImage
     public ?float             $distanceToChurchOrCenter = NULL; // Gemarkung
     #[ORM\Column(type: 'string', length: 255, nullable: TRUE)]
     public ?string            $churchOrCenterName       = NULL; // Landkreis
+    #[ORM\Column(type: 'string', length: 10, nullable: TRUE)]
+    public ?string            $directionToChurchOrCenter = NULL; // Himmelsrichtung
     #[ORM\Column(type: 'string', length: 255, nullable: TRUE)]
     public ?string            $cameraModel              = NULL; // Bundesland
     #[ORM\Column(type: 'string', length: 255, nullable: TRUE)]

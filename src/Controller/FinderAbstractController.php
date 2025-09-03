@@ -11,9 +11,15 @@ class FinderAbstractController extends SymfonyAbstractController
 
     public function getUserFullName():string
     {
-        return $this->getUser() && $this->getUser()->vorname && $this->getUser()->nachname
-            ? $this->getUser()->vorname . ' ' . $this->getUser()->nachname
-            : 'anonymous';
+        $user = $this->getUser();
+        if ($user && method_exists($user, 'getVorname') && method_exists($user, 'getNachname')) {
+            $vorname = $user->getVorname();
+            $nachname = $user->getNachname();
+            if ($vorname && $nachname) {
+                return $vorname . ' ' . $nachname;
+            }
+        }
+        return 'anonymous';
     }
 
 }

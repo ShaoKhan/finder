@@ -9,7 +9,7 @@ state: 'Bundesland'
 county: 'Landkreis'
 district: 'District'
 parcel: 'Gemarkung'
-next: 'am nächsten'
+next: 'Nahe'
 photoUploadSuccess: 'Dein Bild wurde erfolgreich hochgeladen'
 photosUploadSuccess: '%count% Bilder wurden erfolgreich hochgeladen'
 noExifData: 'Die Datei %filename% enthält keine EXIF-Daten'
@@ -20,6 +20,17 @@ noChurchFound: 'keine Kirche in der Nähe gefunden'
 noChurchOrTownFound: 'keine Kirche oder Stadt in der Nähe gefunden'
 noValidDistance: 'konnte keine Entfernung zu Stadt oder Kirche ermitteln'
 unknown: 'Unbekannt'
+
+# Himmelsrichtungen
+direction:
+  N: 'Norden'
+  NO: 'Nordosten'
+  O: 'Osten'
+  SO: 'Südosten'
+  S: 'Süden'
+  SW: 'Südwesten'
+  W: 'Westen'
+  NW: 'Nordwesten'
 usingCurrentDate: 'Für die Datei %filename% wurde das aktuelle Datum verwendet, da kein Aufnahmedatum gefunden wurde'
 
 # Neu hinzugefügte Übersetzungen aus dem Controller

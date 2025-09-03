@@ -141,6 +141,12 @@
 
     <div class="mt-2">
         <strong>Lage zum Ortskern:</strong> {{ images[0].churchOrCenterName|default(images[0].nearestTown) }}<br/>
+        {% if images[0].distanceToChurchOrCenter is not null %}
+            Entfernung: {{ (images[0].distanceToChurchOrCenter * 1000)|number_format(0, ',', '.') }} m
+            {% if images[0].directionToChurchOrCenter %}
+                {{ ('direction.' ~ images[0].directionToChurchOrCenter)|trans }}
+            {% endif %}
+        {% endif %}<br/>
         (von Ortsmitte/Kirche zum Fundplatz)
     </div>
 

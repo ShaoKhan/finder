@@ -145,7 +145,10 @@
                                         <strong>{{ 'next'|trans }}:</strong>
                                         {{ image.church_or_center_name|default('unbekannt') }}
                                         {% if image.distanceToChurchOrCenter is not null %}
-                                            ({{ (image.distanceToChurchOrCenter * 1000)|number_format(0, ',', '.') }} m)
+                                            ({{ (image.distanceToChurchOrCenter * 1000)|number_format(0, ',', '.') }} m
+                                            {% if image.directionToChurchOrCenter %}
+                                                {{ ('direction.' ~ image.directionToChurchOrCenter)|trans }}
+                                            {% endif %})
                                         {% endif %}
                                     </p>
                                     <p class="mb-1"><strong>{{ 'filter.utm'|trans }}:</strong> {{ image.utm|default('keine UTM Daten') }}</p>

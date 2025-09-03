@@ -217,6 +217,74 @@ EOT;
         return $earthRadius * $c;
     }
 
+    /**
+     * Berechnet die Himmelsrichtung von einem Punkt zu einem anderen
+     * 
+     * @param float $lat1 // Standort (von)
+     * @param float $lon1 // Standort (von)
+     * @param float $lat2 // Ziel (zu)
+     * @param float $lon2 // Ziel (zu)
+     * @return string Himmelsrichtung (N, NO, O, SO, S, SW, W, NW)
+     */
+    public function calculateBearing(float $lat1, float $lon1, float $lat2, float $lon2): string
+    {
+        // Konvertiere Grad zu Radiant
+        $lat1Rad = deg2rad($lat1);
+        $lat2Rad = deg2rad($lat2);
+        $dLonRad = deg2rad($lon2 - $lon1);
+
+        // Berechne den Bearing (Azimut)
+        $y = sin($dLonRad) * cos($lat2Rad);
+        $x = cos($lat1Rad) * sin($lat2Rad) - sin($lat1Rad) * cos($lat2Rad) * cos($dLonRad);
+        
+        $bearing = atan2($y, $x);
+        
+        // Konvertiere von Radiant zu Grad und normalisiere auf 0-360°
+        $bearingDegrees = rad2deg($bearing);
+        $bearingDegrees = fmod($bearingDegrees + 360, 360);
+
+        // Konvertiere zu Himmelsrichtung
+        return $this->degreesToCompass($bearingDegrees);
+    }
+
+    /**
+     * Konvertiert Grad in Himmelsrichtung
+     * 
+     * @param float $degrees
+     * @return string
+     */
+    private function degreesToCompass(float $degrees): string
+    {
+        $directions = [
+            'N' => [348.75, 11.25],
+            'NO' => [11.25, 33.75],
+            'O' => [33.75, 56.25],
+            'SO' => [56.25, 78.75],
+            'S' => [78.75, 101.25],
+            'SW' => [101.25, 123.75],
+            'W' => [123.75, 146.25],
+            'NW' => [146.25, 168.75],
+            'N2' => [168.75, 191.25], // N (180-191.25)
+            'NW2' => [191.25, 213.75], // NW (191.25-213.75)
+            'W2' => [213.75, 236.25], // W (213.75-236.25)
+            'SW2' => [236.25, 258.75], // SW (236.25-258.75)
+            'S2' => [258.75, 281.25], // S (258.75-281.25)
+            'SO2' => [281.25, 303.75], // SO (281.25-303.75)
+            'O2' => [303.75, 326.25], // O (303.75-326.25)
+            'NO2' => [326.25, 348.75], // NO (326.25-348.75)
+        ];
+
+        foreach ($directions as $direction => $range) {
+            if ($degrees >= $range[0] && $degrees < $range[1]) {
+                // Entferne die "2" Suffixe für die Rückgabe
+                return str_replace('2', '', $direction);
+            }
+        }
+
+        // Fallback für den Fall, dass nichts gefunden wird
+        return 'N';
+    }
+
     public function getGemarkungByUTM(float $utmX, float $utmY): ?array
     {
         // Basis-URL der API (neuer Endpunkt /items)
