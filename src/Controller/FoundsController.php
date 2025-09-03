@@ -361,33 +361,40 @@ class FoundsController extends FinderAbstractController
         $nearestChurch = $this->geoService->findNearestChurch($latitude, $longitude);
         $nearestTown   = $this->geoService->getNearestTown($latitude, $longitude);
 
-        // Distanzen nur berechnen, wenn Ziel existiert
+        // Distanzen und Himmelsrichtungen nur berechnen, wenn Ziel existiert
         if ($nearestChurch && isset($nearestChurch['latitude'], $nearestChurch['longitude'])) {
             try {
                 $distanceChurch = $this->geoService->calculateDistance($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
-                $church = 'Kirche: ' . $nearestChurch['name'];
+                $directionChurch = $this->geoService->calculateBearing($latitude, $longitude, $nearestChurch['latitude'], $nearestChurch['longitude']);
+                $church = 'Kirche ' . $nearestChurch['name'];
             } catch (\Throwable $e) {
                 $distanceChurch = null;
+                $directionChurch = null;
                 $this->logger->warning('Fehler bei Distanzberechnung zur Kirche: ' . $e->getMessage());
             }
         }
         if ($nearestTown && isset($nearestTown['latitude'], $nearestTown['longitude'])) {
             try {
                 $distanceTown = $this->geoService->calculateDistance($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
-                $town = 'Ort: ' . $nearestTown['name'];
+                $directionTown = $this->geoService->calculateBearing($latitude, $longitude, $nearestTown['latitude'], $nearestTown['longitude']);
+                $town = 'Ort ' . $nearestTown['name'];
             } catch (\Throwable $e) {
                 $distanceTown = null;
+                $directionTown = null;
                 $this->logger->warning('Fehler bei Distanzberechnung zum Ort: ' . $e->getMessage());
             }
         }
 
-        // Entscheide, was näher ist
+        // Entscheide, was näher ist und setze entsprechende Himmelsrichtung
+        $direction = null;
         if ($distanceChurch !== null && ($distanceTown === null || $distanceChurch < $distanceTown)) {
             $churchOrCenterName = $church;
             $distance = $distanceChurch;
+            $direction = $directionChurch;
         } elseif ($distanceTown !== null && ($distanceChurch === null || $distanceTown < $distanceChurch)) {
             $churchOrCenterName = $town;
             $distance = $distanceTown;
+            $direction = $directionTown;
         } else {
             $this->addFlash('error', $this->translator->trans('noChurchOrTownFound', [], 'founds'));
         }
@@ -429,6 +436,7 @@ class FoundsController extends FinderAbstractController
         $photo->nearestTown              = $town;
         $photo->distanceToChurchOrCenter = $distance;
         $photo->churchOrCenterName       = $churchOrCenterName;
+        $photo->directionToChurchOrCenter = $direction;
         $photo->setUser($this->getUser());
         /** @var User $user */
         $user = $this->getUser();
@@ -508,6 +516,7 @@ class FoundsController extends FinderAbstractController
                 'longitude' => $image->longitude,
                 'church_or_center_name' => $image->churchOrCenterName,
                 'distanceToChurchOrCenter' => $image->distanceToChurchOrCenter,
+                'directionToChurchOrCenter' => $image->directionToChurchOrCenter,
                 'nearestTown' => $image->nearestTown,
                 'state' => $image->state,
                 'county' => $image->county,
