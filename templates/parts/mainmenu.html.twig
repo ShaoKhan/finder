@@ -49,12 +49,31 @@
                            href="{{ path('found_gallery') }}">{{ 'galerie'|trans }}</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if app.request.attributes.get('_route') starts with 'gps_tracking' %}active{% endif %}"
+                           href="{{ path('gps_tracking_history') }}">Begehungen</a>
+                    </li>
+                    <li class="nav-item">
                         {# <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="https://forum.finder.nettronix.de" target="_blank">{{ 'forum'|trans }}</a> #}
                         <a class="nav-link" href="https://finderforum.nettronix.de/" target="_blank" title="zum Forum">Forum</a>
                     </li>
                 </ul>
             {% endif %}
             <ul class="navbar-nav ms-auto">
+                {% if app.user %}
+                    <li class="nav-item me-2">
+                        <div class="btn-group" role="group">
+                            <button id="gps-start-btn" class="btn btn-success btn-sm" data-action="start">
+                                <i class="bi bi-play-circle"></i> Start
+                            </button>
+                            <button id="gps-stop-btn" class="btn btn-outline-danger btn-sm" data-action="stop" disabled>
+                                <i class="bi bi-stop-circle"></i> Stop
+                            </button>
+                        </div>
+                    </li>
+                    <li class="nav-item me-2">
+                        <span id="gps-status" class="badge bg-secondary">GPS nicht verfügbar</span>
+                    </li>
+                {% endif %}
                 <li class="nav-item">
                     {% if app.user %}
                         <a role="button" class="btn btn-primary btn-sm"

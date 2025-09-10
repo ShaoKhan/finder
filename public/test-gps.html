@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS-Tracking Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🧪 GPS-Tracking Test Tool</h1>
+    
+    <div class="test-section">
+        <h3>1. GPS-Verfügbarkeit testen</h3>
+        <button onclick="testGpsAvailability()">GPS testen</button>
+        <div id="gps-status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Begehung starten (simuliert)</h3>
+        <button onclick="startBegehung()">Begehung starten</button>
+        <div id="start-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. GPS-Punkte hinzufügen</h3>
+        <button onclick="addTrackPoint()">GPS-Punkt hinzufügen</button>
+        <div id="track-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Begehung beenden</h3>
+        <button onclick="stopBegehung()">Begehung beenden</button>
+        <div id="stop-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. Begehungsübersicht</h3>
+        <button onclick="loadHistory()">Historie laden</button>
+        <div id="history-result"></div>
+    </div>
+
+    <script>
+        // Simulierte GPS-Koordinaten (Berlin)
+        let currentLat = 52.5200;
+        let currentLon = 13.4050;
+        let begehungId = null;
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        async function testGpsAvailability() {
+            if (navigator.geolocation) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 5000,
+                            maximumAge: 0
+                        });
+                    });
+                    
+                    currentLat = position.coords.latitude;
+                    currentLon = position.coords.longitude;
+                    
+                    log('gps-status', `✅ GPS verfügbar!<br>Lat: ${currentLat.toFixed(6)}<br>Lon: ${currentLon.toFixed(6)}`, 'success');
+                } catch (error) {
+                    log('gps-status', `⚠️ GPS nicht verfügbar: ${error.message}<br>Verwende simulierte Koordinaten: ${currentLat}, ${currentLon}`, 'error');
+                }
+            } else {
+                log('gps-status', '❌ Geolocation nicht unterstützt', 'error');
+            }
+        }
+
+        async function startBegehung() {
+            try {
+                const response = await fetch('/gps-tracking/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: currentLat,
+                        longitude: currentLon
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    begehungId = data.begehung.id;
+                    log('start-result', `✅ Begehung gestartet!<br>ID: ${begehungId}<br>Start: ${data.begehung.startTime}`, 'success');
+                } else {
+                    log('start-result', `❌ Fehler: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log('start-result', `❌ Fehler: ${error.message}`, 'error');
+            }
+        }
+
+        async function addTrackPoint() {
+            if (!begehungId) {
+                log('track-result', '❌ Keine aktive Begehung!', 'error');
+                return;
+            }
+
+            // Simuliere Bewegung
+            currentLat += (Math.random() - 0.5) * 0.001;
+            currentLon += (Math.random() - 0.5) * 0.001;
+
+            try {
+                const response = await fetch('/gps-tracking/track-point', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: currentLat,
+                        longitude: currentLon
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('track-result', `✅ GPS-Punkt hinzugefügt!<br>Lat: ${currentLat.toFixed(6)}<br>Lon: ${currentLon.toFixed(6)}`, 'success');
+                } else {
+                    log('track-result', `❌ Fehler: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log('track-result', `❌ Fehler: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopBegehung() {
+            if (!begehungId) {
+                log('stop-result', '❌ Keine aktive Begehung!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/gps-tracking/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: currentLat,
+                        longitude: currentLon
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('stop-result', `✅ Begehung beendet!<br>Dauer: ${data.begehung.formattedDuration}<br>Punkte: ${data.begehung.trackData.length}`, 'success');
+                    begehungId = null;
+                } else {
+                    log('stop-result', `❌ Fehler: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                log('stop-result', `❌ Fehler: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch('/gps-tracking/history/api');
+                const data = await response.json();
+                
+                if (data.begehungen) {
+                    let html = '<h4>Begehungen:</h4><ul>';
+                    data.begehungen.forEach(begehung => {
+                        html += `<li>
+                            <strong>${new Date(begehung.startTime).toLocaleString('de-DE')}</strong><br>
+                            Dauer: ${begehung.formattedDuration || 'Läuft...'}<br>
+                            Funde: ${begehung.foundsCount}<br>
+                            <a href="/gps-tracking/map/${begehung.id}" target="_blank">Karte anzeigen</a>
+                        </li>`;
+                    });
+                    html += '</ul>';
+                    log('history-result', html, 'success');
+                } else {
+                    log('history-result', 'Keine Begehungen gefunden', 'info');
+                }
+            } catch (error) {
+                log('history-result', `❌ Fehler: ${error.message}`, 'error');
+            }
+        }
+
+        // Automatisch GPS testen beim Laden
+        window.onload = function() {
+            testGpsAvailability();
+        };
+    </script>
+</body>
+</html>

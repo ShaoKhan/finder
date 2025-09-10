@@ -1,0 +1,279 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Begehungskarte - {{ begehung.uuid }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        #map {
+            height: 700px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .track-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .map-container {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .map-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            min-height: 700px;
+        }
+        .track-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Begehungskarte</h2>
+            
+            <div class="track-info">
+                <h4>Begehung: {{ begehung.uuid }}</h4>
+                <p>
+                    <strong>Start:</strong> {{ begehung.startTime|date('d.m.Y H:i:s') }}<br>
+                    {% if begehung.endTime %}
+                        <strong>Ende:</strong> {{ begehung.endTime|date('d.m.Y H:i:s') }}<br>
+                        <strong>Dauer:</strong> {{ begehung.formattedDuration }}
+                    {% else %}
+                        <span class="badge bg-success">Aktiv</span>
+                    {% endif %}
+                </p>
+                
+                <div class="track-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="distance">-</div>
+                        <div class="stat-label">Gesamtstrecke</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="area">-</div>
+                        <div class="stat-label">Fläche</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="points">-</div>
+                        <div class="stat-label">GPS-Punkte</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="founds">-</div>
+                        <div class="stat-label">Funde</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="map-container">
+                <div class="row">
+                    <div class="col-md-10">
+                        <div id="map"></div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="map-controls">
+                            <div class="btn-group-vertical" role="group">
+                                <button type="button" class="btn btn-outline-primary mb-2" onclick="toggleTrack()">
+                                    <i class="bi bi-route"></i> Track anzeigen/verstecken
+                                </button>
+                                <button type="button" class="btn btn-outline-success mb-2" onclick="togglePolygon()">
+                                    <i class="bi bi-polygon"></i> Fläche anzeigen/verstecken
+                                </button>
+                                <button type="button" class="btn btn-outline-info mb-2" onclick="fitToBounds()">
+                                    <i class="bi bi-arrows-fullscreen"></i> Alles anzeigen
+                                </button>
+                                <a href="{{ path('gps_tracking_history') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Zurück zu den Begehungen
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        let map;
+        let trackLayer;
+        let polygonLayer;
+        let trackVisible = true;
+        let polygonVisible = true;
+        
+        const trackGeoJson = {{ trackGeoJson|raw }};
+        const polygonGeoJson = {{ polygonGeoJson|raw }};
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Karte initialisieren
+            map = L.map('map').setView([52.5200, 13.4050], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Track-Layer erstellen
+            trackLayer = L.geoJSON(trackGeoJson, {
+                style: {
+                    color: '#007bff',
+                    weight: 4,
+                    opacity: 0.8
+                }
+            });
+            
+            // Polygon-Layer erstellen
+            polygonLayer = L.geoJSON(polygonGeoJson, {
+                style: {
+                    color: '#28a745',
+                    weight: 2,
+                    opacity: 0.8,
+                    fillColor: '#28a745',
+                    fillOpacity: 0.2
+                }
+            });
+            
+            // Layer zur Karte hinzufügen
+            if (trackGeoJson.geometry && trackGeoJson.geometry.coordinates.length > 0) {
+                trackLayer.addTo(map);
+            }
+            
+            if (polygonGeoJson.geometry && polygonGeoJson.geometry.coordinates.length > 0) {
+                polygonLayer.addTo(map);
+            }
+            
+            // Statistiken aktualisieren
+            updateStats();
+            
+            // Karte auf alle Features zentrieren
+            fitToBounds();
+        });
+        
+        function toggleTrack() {
+            if (trackVisible) {
+                map.removeLayer(trackLayer);
+                trackVisible = false;
+            } else {
+                map.addLayer(trackLayer);
+                trackVisible = true;
+            }
+        }
+        
+        function togglePolygon() {
+            if (polygonVisible) {
+                map.removeLayer(polygonLayer);
+                polygonVisible = false;
+            } else {
+                map.addLayer(polygonLayer);
+                polygonVisible = true;
+            }
+        }
+        
+        function fitToBounds() {
+            const group = new L.featureGroup();
+            
+            // Füge alle verfügbaren Layer hinzu, unabhängig von ihrer Sichtbarkeit
+            if (trackLayer) {
+                group.addLayer(trackLayer);
+            }
+            if (polygonLayer) {
+                group.addLayer(polygonLayer);
+            }
+            
+            // Füge auch alle Marker hinzu (falls vorhanden)
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Marker) {
+                    group.addLayer(layer);
+                }
+            });
+            
+            if (group.getLayers().length > 0) {
+                map.fitBounds(group.getBounds().pad(0.1));
+            } else {
+                // Fallback: Zeige die gesamte Begehung an
+                if (trackGeoJson && trackGeoJson.geometry && trackGeoJson.geometry.coordinates) {
+                    const coordinates = trackGeoJson.geometry.coordinates;
+                    if (coordinates.length > 0) {
+                        const bounds = L.latLngBounds(coordinates);
+                        map.fitBounds(bounds.pad(0.1));
+                    }
+                }
+            }
+        }
+        
+        function updateStats() {
+            // Distanz anzeigen
+            if (trackGeoJson.properties && trackGeoJson.properties.distance) {
+                const distance = trackGeoJson.properties.distance;
+                document.getElementById('distance').textContent = formatDistance(distance);
+            }
+            
+            // Fläche anzeigen
+            if (polygonGeoJson.properties && polygonGeoJson.properties.area) {
+                const area = polygonGeoJson.properties.area;
+                document.getElementById('area').textContent = formatArea(area);
+            }
+            
+            // GPS-Punkte zählen
+            if (trackGeoJson.geometry && trackGeoJson.geometry.coordinates) {
+                document.getElementById('points').textContent = trackGeoJson.geometry.coordinates.length;
+            }
+            
+            // Funde zählen (aus dem Template)
+            document.getElementById('founds').textContent = {{ begehung.foundsImages.count }};
+        }
+        
+        function formatDistance(meters) {
+            if (meters < 1000) {
+                return Math.round(meters) + ' m';
+            } else {
+                return (meters / 1000).toFixed(2) + ' km';
+            }
+        }
+        
+        function formatArea(squareMeters) {
+            if (squareMeters < 10000) {
+                return Math.round(squareMeters) + ' m²';
+            } else {
+                return (squareMeters / 10000).toFixed(2) + ' ha';
+            }
+        }
+    </script>
+{% endblock %}

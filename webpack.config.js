@@ -22,6 +22,7 @@ Encore
      */
     .addEntry('app', './assets/app.js')
     .addEntry('project-validation', './assets/js/project-name-validation.js')
+    .addEntry('gps-tracking', './assets/js/gps-tracking.js')
 
     // enables the Symfony UX Stimulus bridge (used in assets/bootstrap.js)
     .enableStimulusBridge('./assets/controllers.json')

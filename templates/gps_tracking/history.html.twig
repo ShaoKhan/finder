@@ -1,0 +1,559 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Begehungsübersicht{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .begehung-card {
+            transition: transform 0.2s;
+        }
+        .begehung-card:hover {
+            transform: translateY(-2px);
+        }
+        .begehung-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        .active-badge {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Modal-Styling */
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .modal-title {
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .modal-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .begehung-info h6 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .begehung-info li {
+            margin-bottom: 0.25rem;
+        }
+
+        .begehung-info li:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-3">
+            <h2>Begehungen</h2>
+            <p class="text-muted">Verwalten Sie Ihre GPS-Tracks und Begehungen</p>
+        </div>
+        <div class="col-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <button class="btn btn-outline-primary" onclick="refreshHistory()">
+                        <i class="bi bi-arrow-clockwise"></i> Aktualisieren
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="begehungen-container">
+        <!-- Begehungen werden hier dynamisch geladen -->
+        <div class="col-12 text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Lade Begehungen...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Statistiken</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="statistics-container">
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="stat-value" id="total-begehungen">-</div>
+                                <div class="stat-label">Gesamt Begehungen</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="stat-value" id="total-dauer">-</div>
+                                <div class="stat-label">Gesamtdauer</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="stat-value" id="total-funde">-</div>
+                                <div class="stat-label">Funde gesamt</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="stat-value" id="aktive-begehung">-</div>
+                                <div class="stat-label">Aktive Begehung</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Löschbestätigungs-Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                    Begehung löschen
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Wichtiger Hinweis:</strong> Die zugeordneten Funde werden NICHT gelöscht, sondern nur von der Begehung getrennt.
+                </div>
+                <p>Sind Sie sicher, dass Sie diese Begehung löschen möchten?</p>
+                <div class="begehung-info bg-light p-3 rounded">
+                    <h6>Begehungsdetails:</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Startzeit:</strong> <span id="modal-start-time"></span></li>
+                        <li><strong>Dauer:</strong> <span id="modal-duration"></span></li>
+                        <li><strong>Funde:</strong> <span id="modal-founds-count"></span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Abbrechen
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash"></i> Ja, löschen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        let begehungen = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBegehungen();
+            
+            // Event-Listener für Löschbestätigung
+            document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+                confirmDelete();
+            });
+        });
+
+        async function loadBegehungen() {
+            try {
+                const response = await fetch('/gps-tracking/history/api');
+                const data = await response.json();
+                begehungen = data.begehungen;
+                renderBegehungen();
+                updateStatistics();
+            } catch (error) {
+                console.error('Fehler beim Laden der Begehungen:', error);
+                showError('Fehler beim Laden der Begehungen');
+            }
+        }
+
+        function renderBegehungen() {
+            const container = document.getElementById('begehungen-container');
+            
+            if (begehungen.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Keine Begehungen gefunden</h5>
+                                <p class="card-text">Starten Sie Ihre erste GPS-Begehung über die Buttons in der Navigation.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = begehungen.map(begehung => `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card begehung-card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">${formatDate(begehung.startTime)}</h6>
+                            ${begehung.isActive ? '<span class="badge bg-success active-badge">Aktiv</span>' : ''}
+                        </div>
+                        <div class="card-body">
+                            <div class="begehung-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${begehung.formattedDuration || 'Läuft...'}</div>
+                                    <div class="stat-label">Dauer</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${begehung.foundsCount}</div>
+                                    <div class="stat-label">Funde</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="distance-${begehung.id}">-</div>
+                                    <div class="stat-label">Distanz</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="area-${begehung.id}">-</div>
+                                    <div class="stat-label">Fläche</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="btn-group w-100" role="group">
+                                <a href="/gps-tracking/map/${begehung.id}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-map"></i> Karte
+                                </a>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteBegehung(${begehung.id})">
+                                    <i class="bi bi-trash"></i> Löschen
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Berechne Distanz und Fläche für jede Begehung
+            begehungen.forEach(begehung => {
+                calculateBegehungStats(begehung);
+            });
+        }
+
+        function calculateBegehungStats(begehung) {
+            // Verwende die vom Backend berechneten Werte
+            if (begehung.distance !== undefined) {
+                document.getElementById(`distance-${begehung.id}`).textContent = formatDistance(begehung.distance);
+            } else {
+                document.getElementById(`distance-${begehung.id}`).textContent = '-';
+            }
+
+            if (begehung.area !== undefined) {
+                document.getElementById(`area-${begehung.id}`).textContent = formatArea(begehung.area);
+            } else {
+                document.getElementById(`area-${begehung.id}`).textContent = '-';
+            }
+        }
+
+        function calculateTrackDistance(trackPoints) {
+            if (trackPoints.length < 2) return 0;
+
+            let totalDistance = 0;
+            for (let i = 0; i < trackPoints.length - 1; i++) {
+                const point1 = trackPoints[i];
+                const point2 = trackPoints[i + 1];
+                
+                totalDistance += calculateDistance(
+                    point1.latitude,
+                    point1.longitude,
+                    point2.latitude,
+                    point2.longitude
+                );
+            }
+            return totalDistance;
+        }
+
+        function calculateTrackArea(trackPoints) {
+            if (trackPoints.length < 2) return 0;
+
+            // Bei nur 2 Punkten: Buffer-Zone um die Linie (2m Padding)
+            if (trackPoints.length === 2) {
+                return calculateLineBufferArea(trackPoints[0], trackPoints[1], 2.0);
+            }
+
+            // Bei 3+ Punkten: Convex Hull berechnen
+            const convexHull = calculateConvexHull(trackPoints);
+            
+            // Wenn nach dem Filtern zu wenige Punkte übrig sind, verwende alle Punkte
+            if (convexHull.length < 3) {
+                return calculatePolygonArea(trackPoints);
+            }
+            
+            return calculatePolygonArea(convexHull);
+        }
+
+        function calculateLineBufferArea(point1, point2, bufferDistance) {
+            // Berechne die Distanz zwischen den beiden Punkten
+            const distance = calculateDistance(
+                point1.latitude,
+                point1.longitude,
+                point2.latitude,
+                point2.longitude
+            );
+
+            // Berechne die Fläche der Buffer-Zone
+            // Die Fläche besteht aus:
+            // 1. Einem Rechteck mit der Länge der Linie und der Breite 2 * bufferDistance
+            // 2. Zwei Halbkreisen an den Enden mit dem Radius bufferDistance
+            
+            const rectangleArea = distance * (2 * bufferDistance);
+            const circleArea = Math.PI * bufferDistance * bufferDistance; // Zwei Halbkreise = ein ganzer Kreis
+            
+            return rectangleArea + circleArea;
+        }
+
+        function calculateConvexHull(points) {
+            if (points.length < 3) return points;
+
+            // GPS-Rauschen filtern (Punkte die zu nah beieinander liegen)
+            const filteredPoints = filterGpsNoise(points);
+            
+            if (filteredPoints.length < 3) return filteredPoints;
+
+            // Sortiere Punkte nach Y-Koordinate, dann nach X-Koordinate
+            filteredPoints.sort((a, b) => {
+                if (a.latitude === b.latitude) {
+                    return a.longitude - b.longitude;
+                }
+                return a.latitude - b.latitude;
+            });
+
+            const hull = [];
+            hull.push(filteredPoints[0]);
+            hull.push(filteredPoints[1]);
+
+            for (let i = 2; i < filteredPoints.length; i++) {
+                while (hull.length > 1 && crossProduct(hull[hull.length-2], hull[hull.length-1], filteredPoints[i]) <= 0) {
+                    hull.pop();
+                }
+                hull.push(filteredPoints[i]);
+            }
+
+            return hull;
+        }
+
+        function filterGpsNoise(points, minDistance = 1.0) {
+            if (points.length < 2) return points;
+
+            const filtered = [points[0]]; // Ersten Punkt immer behalten
+            
+            for (let i = 1; i < points.length; i++) {
+                const lastPoint = filtered[filtered.length - 1];
+                const currentPoint = points[i];
+                
+                const distance = calculateDistance(
+                    lastPoint.latitude,
+                    lastPoint.longitude,
+                    currentPoint.latitude,
+                    currentPoint.longitude
+                );
+                
+                // Nur Punkte behalten die mindestens 1m entfernt sind
+                if (distance >= minDistance) {
+                    filtered.push(currentPoint);
+                }
+            }
+            
+            return filtered;
+        }
+
+        function calculatePolygonArea(polygonPoints) {
+            if (polygonPoints.length < 3) return 0;
+
+            let area = 0;
+            const n = polygonPoints.length;
+
+            // Shoelace-Formel für GPS-Koordinaten (in Quadratgrad)
+            for (let i = 0; i < n; i++) {
+                const j = (i + 1) % n;
+                area += polygonPoints[i].longitude * polygonPoints[j].latitude;
+                area -= polygonPoints[j].longitude * polygonPoints[i].latitude;
+            }
+
+            area = Math.abs(area) / 2.0;
+            
+            // Umrechnung von Quadratgrad zu Quadratmetern
+            // 1 Grad ≈ 111.32 km, also 1 Grad² ≈ 12.393.742.400 m²
+            const areaInSquareMeters = area * 12393742400;
+            
+            return areaInSquareMeters;
+        }
+
+        function crossProduct(O, A, B) {
+            return (A.longitude - O.longitude) * (B.latitude - O.latitude) - 
+                   (A.latitude - O.latitude) * (B.longitude - O.longitude);
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const earthRadius = 6371000; // Erdradius in Metern
+
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                     Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                     Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return earthRadius * c;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+
+        function formatDistance(meters) {
+            if (meters < 1000) {
+                return Math.round(meters) + ' m';
+            } else {
+                return (meters / 1000).toFixed(2) + ' km';
+            }
+        }
+
+        function formatArea(squareMeters) {
+            if (squareMeters < 10000) {
+                return Math.round(squareMeters) + ' m²';
+            } else {
+                return (squareMeters / 10000).toFixed(2) + ' ha';
+            }
+        }
+
+        let currentBegehungId = null;
+
+        function deleteBegehung(begehungId) {
+            currentBegehungId = begehungId;
+            
+            // Finde die Begehung in der Liste
+            const begehung = begehungen.find(b => b.id === begehungId);
+            if (!begehung) {
+                console.error('Begehung nicht gefunden');
+                return;
+            }
+
+            // Fülle Modal mit Begehungsdaten
+            document.getElementById('modal-start-time').textContent = formatDate(begehung.startTime);
+            document.getElementById('modal-duration').textContent = begehung.formattedDuration || 'Läuft...';
+            document.getElementById('modal-founds-count').textContent = begehung.foundsCount;
+
+            // Zeige Modal
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        }
+
+        function confirmDelete() {
+            if (!currentBegehungId) {
+                console.error('Keine Begehung-ID für Löschung');
+                return;
+            }
+
+            // Erstelle ein verstecktes Formular für den POST-Request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/gps-tracking/delete/${currentBegehungId}`;
+            
+            // CSRF-Token hinzufügen
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (token) {
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '_token';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function updateStatistics() {
+            const totalBegehungen = begehungen.length;
+            const totalDauer = begehungen.reduce((sum, b) => sum + (b.duration || 0), 0);
+            const totalFunde = begehungen.reduce((sum, b) => sum + b.foundsCount, 0);
+            const aktiveBegehung = begehungen.filter(b => b.isActive).length;
+
+            document.getElementById('total-begehungen').textContent = totalBegehungen;
+            document.getElementById('total-dauer').textContent = formatDuration(totalDauer);
+            document.getElementById('total-funde').textContent = totalFunde;
+            document.getElementById('aktive-begehung').textContent = aktiveBegehung;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('de-DE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '0m';
+            
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            let result = '';
+            if (hours > 0) result += hours + 'h ';
+            if (minutes > 0) result += minutes + 'm';
+            
+            return result.trim() || '0m';
+        }
+
+
+        function refreshHistory() {
+            loadBegehungen();
+        }
+
+        function showError(message) {
+            const container = document.getElementById('begehungen-container');
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> ${message}
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+{% endblock %}
