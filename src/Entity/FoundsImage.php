@@ -78,6 +78,12 @@ class FoundsImage
     #[ORM\ManyToOne(inversedBy: 'foundsImages')]
     private ?Project $project = NULL;
 
+    #[ORM\ManyToOne(inversedBy: 'foundsImages')]
+    private ?Begehung $begehung = NULL;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $trackIndex = NULL;
+
     public function getName(): ?string
     {
         return $this->name;
@@ -123,6 +129,28 @@ class FoundsImage
     {
         $this->project = $project;
 
+        return $this;
+    }
+
+    public function getBegehung(): ?Begehung
+    {
+        return $this->begehung;
+    }
+
+    public function setBegehung(?Begehung $begehung): static
+    {
+        $this->begehung = $begehung;
+        return $this;
+    }
+
+    public function getTrackIndex(): ?int
+    {
+        return $this->trackIndex;
+    }
+
+    public function setTrackIndex(?int $trackIndex): static
+    {
+        $this->trackIndex = $trackIndex;
         return $this;
     }
 

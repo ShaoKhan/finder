@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token('delete_begehung') }}">
     <title>{% block title %}{{ app_title }}{% endblock %}</title>
     {% block meta %}{% endblock %}
     {% block stylesheets %}
@@ -12,6 +13,9 @@
     {% block javascripts %}
         {{ encore_entry_script_tags('app') }}
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        {% if app.user %}
+            {{ encore_entry_script_tags('gps-tracking') }}
+        {% endif %}
     {% endblock %}
 </head>
 <body>

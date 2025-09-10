@@ -60,10 +60,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'users')]
     private Collection $projects;
 
+    /**
+     * @var Collection<int, Begehung>
+     */
+    #[ORM\OneToMany(targetEntity: Begehung::class, mappedBy: 'user')]
+    private Collection $begehungen;
+
     public function __construct()
     {
         $this->foundsImages = new ArrayCollection();
         $this->projects = new ArrayCollection();
+        $this->begehungen = new ArrayCollection();
         $this->uuid = Uuid::v4()->toRfc4122();
     }
 
@@ -256,6 +263,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->projects->removeElement($project)) {
             $project->removeUser($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Begehung>
+     */
+    public function getBegehungen(): Collection
+    {
+        return $this->begehungen;
+    }
+
+    public function addBegehung(Begehung $begehung): static
+    {
+        if (!$this->begehungen->contains($begehung)) {
+            $this->begehungen->add($begehung);
+            $begehung->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBegehung(Begehung $begehung): static
+    {
+        if ($this->begehungen->removeElement($begehung)) {
+            if ($begehung->getUser() === $this) {
+                $begehung->setUser(null);
+            }
         }
 
         return $this;
