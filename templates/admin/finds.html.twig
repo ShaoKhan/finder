@@ -4,80 +4,10 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <style>
-        .thumbnail {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .thumbnail:hover {
-            transform: scale(1.05);
-        }
-        .modal-image {
-            max-width: 100%;
-            height: auto;
-        }
-        .user-section {
-            background-color: #f8f9fa;
-            border-radius: 0.25rem;
-            margin-bottom: 1rem;
-        }
-        .find-card {
-            border: 1px solid #dee2e6;
-            border-radius: 0.25rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: white;
-        }
-        .image-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
-            margin-top: 1rem;
-        }
-        .badge-public {
-            background-color: #198754;
-            color: white;
-        }
-        .badge-private {
-            background-color: #dc3545;
-            color: white;
-        }
-        .accordion-button:not(.collapsed) {
-            background-color: #e7f1ff;
-        }
-        .finds-count {
-            background-color: #0d6efd;
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            margin-left: 0.5rem;
-            font-size: 0.875rem;
-        }
-        .date-accordion .accordion-button {
-            padding: 0.5rem 1rem;
-            font-size: 0.95rem;
-            background-color: #f8f9fa;
-        }
-        .date-accordion .accordion-body {
-            padding: 1rem;
-            background-color: white;
-        }
-        .date-count {
-            background-color: #6c757d;
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            margin-left: 0.5rem;
-            font-size: 0.875rem;
-        }
-    </style>
 {% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
+    <div class="container mt-4 admin">
         <h1 class="mb-4">Fundübersicht</h1>
 
         <div class="accordion" id="userAccordion">

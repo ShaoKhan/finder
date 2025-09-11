@@ -10,17 +10,25 @@
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
+        <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
             {% if app.user %}
                 <ul class="navbar-nav fs-5">
+                    <!-- 1.) Home -->
                     <li class="nav-item">
                         <a class="nav-link {% if app.request.attributes.get('_route') == 'index' %}active{% endif %}"
                            aria-current="page" href="{{ path('home') }}">{{ 'home'|trans }}</a>
                     </li>
+                    <!-- 2.) Hinweise -->
                     <li class="nav-item">
                         <a class="nav-link {% if app.request.attributes.get('_route') == 'hinweise' %}active{% endif %}"
                            aria-current="page" href="{{ path('hinweise') }}">{{ 'hinweise'|trans }}</a>
                     </li>
+                    <!-- 3.) Begehungen -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if app.request.attributes.get('_route') starts with 'gps_tracking' %}active{% endif %}"
+                           href="{{ path('gps_tracking_history') }}">Begehungen</a>
+                    </li>
+                    <!-- 4.) Projekte -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle
                          {% if app.request.attributes.get('_route') == 'project_list' or app.request.attributes.get('_route') == 'project_create' %} active {% endif %}" href="#" id="projectDropdown" role="button"
@@ -30,9 +38,9 @@
                             <li>
                                 <a class="dropdown-item {% if app.request.attributes.get('_route') == 'project_create' %}active{% endif %}"
                                    href="{{ path('project_create') }}">Projekt anlegen</a></li>
-                            
                         </ul>
                     </li>
+                    <!-- 5.) Funde -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle
                          {% if app.request.attributes.get('_route') == 'photo_upload' or app.request.attributes.get('_route') == 'image_list' %} active {% endif %}" href="#" id="navbarDropdown" role="button"
@@ -44,17 +52,10 @@
                             <li><a class="dropdown-item" href="{{ path('image_list') }}">Funde anzeigen</a></li>
                         </ul>
                     </li>
+                    <!-- 6.) Galerie -->
                     <li class="nav-item">
                         <a class="nav-link {% if app.request.attributes.get('_route') == 'found_gallery' %}active{% endif %}"
                            href="{{ path('found_gallery') }}">{{ 'galerie'|trans }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if app.request.attributes.get('_route') starts with 'gps_tracking' %}active{% endif %}"
-                           href="{{ path('gps_tracking_history') }}">Begehungen</a>
-                    </li>
-                    <li class="nav-item">
-                        {# <a class="nav-link {% if app.request.attributes.get('_route') == 'homepage' %}active{% endif %}" href="https://forum.finder.nettronix.de" target="_blank">{{ 'forum'|trans }}</a> #}
-                        <a class="nav-link" href="https://finderforum.nettronix.de/" target="_blank" title="zum Forum">Forum</a>
                     </li>
                 </ul>
             {% endif %}
@@ -71,7 +72,9 @@
                         </div>
                     </li>
                     <li class="nav-item me-2">
-                        <span id="gps-status" class="badge bg-secondary">GPS nicht verfügbar</span>
+                        <span id="gps-status" class="gps-status-icon" title="GPS Status">
+                            <i class="bi bi-geo-alt-fill text-muted"></i>
+                        </span>
                     </li>
                 {% endif %}
                 <li class="nav-item">

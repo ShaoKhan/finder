@@ -1,0 +1,19 @@
+// Index/Home Styles
+.index {
+  .container {
+    .row {
+      &.justify-content-center {
+        justify-content: center;
+      }
+
+      .col-12 {
+        p {
+          &.fs-5 {
+            font-size: 1.25rem;
+            line-height: 1.5;
+          }
+        }
+      }
+    }
+  }
+}

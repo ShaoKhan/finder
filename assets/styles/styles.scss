@@ -1,15 +1,17 @@
 
+// Main Styles
 body {
   background-color: lightgray;
-  font-family: "Gayathri", serif;
+  @include font-primary(normal);
 }
 
+// Error List Styles
 .error-list {
   margin: 0.5rem 0;
   padding-left: 1.5rem;
-}
 
-.error-list li {
-  margin-bottom: 0.25rem;
-  color: #721c24;
+  li {
+    margin-bottom: 0.25rem;
+    color: #721c24;
+  }
 }
