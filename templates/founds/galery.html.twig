@@ -1,8 +1,7 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-
-    <div class="container">
+    <div class="container founds">
         <div class="row">
             <div class="col-12 mt-3">
                 <h1>Galerie</h1>
@@ -13,32 +12,42 @@
                         Es sind derzeit keine öffentlichen Bilder verfügbar.
                     </div>
                 {% else %}
-                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-                        {% for image in images %}
-                            <div class="col">
-                                <div class="card">
-                                    <img
-                                            src="{{ asset('fundbilder/' ~ image.filePath) }}"
-                                            alt="{{ image.name }}"
-                                            class="card-img-top img-thumbnail gallery-image"
-                                            style="cursor: pointer;"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#imageModal"
-                                            data-image-src="{{ asset('fundbilder/' ~ image.filePath) }}">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ image.name }}</h5>
-                                        <p class="card-text">
-                                            Ort: {{ image.nearestTown ? image.nearestTown : 'Unbekannt' }}
-                                        </p>
-                                        <p class="card-text">
-                                            <small class="text-muted">
-                                                Hochgeladen am: {{ image.createdAt|date('Y-m-d H:i') }}
-                                            </small>
-                                        </p>
+                    <div class="gallery-grid">
+                        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                            {% for image in images %}
+                                <div class="col">
+                                    <div class="gallery-card">
+                                        <div class="card">
+                                            <div class="thumbnail-container">
+                                                <img
+                                                    src="{{ asset('fundbilder/' ~ image.filePath) }}"
+                                                    alt="{{ image.name|default('Fundbild') }}"
+                                                    class="gallery-image"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#imageModal"
+                                                    data-image-src="{{ asset('fundbilder/' ~ image.filePath) }}"
+                                                    data-image-title="{{ image.name|default('Fundbild') }}"
+                                                    data-image-location="{{ image.nearestTown ? image.nearestTown : 'Unbekannt' }}"
+                                                    data-image-date="{{ image.createdAt|date('d.m.Y H:i') }}">
+                                            </div>
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ image.name|default('Fundbild') }}</h5>
+                                                <p class="card-text">
+                                                    <i class="bi bi-geo-alt me-1"></i>
+                                                    {{ image.nearestTown ? image.nearestTown : 'Unbekannt' }}
+                                                </p>
+                                                <p class="card-text">
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-calendar me-1"></i>
+                                                        {{ image.createdAt|date('d.m.Y H:i') }}
+                                                    </small>
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
                 {% endif %}
             </div>
@@ -46,10 +55,25 @@
     </div>
     <!-- Modal für vergrößerte Bilder -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Bildansicht</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                </div>
                 <div class="modal-body text-center">
-                    <img id="modalImage" src="" alt="Vergrößertes Bild" class="img-fluid">
+                    <img id="modalImage" src="" alt="Vergrößertes Bild" class="img-fluid rounded">
+                    <div class="mt-3">
+                        <h6 id="modalImageTitle" class="mb-2"></h6>
+                        <p class="text-muted mb-1">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            <span id="modalImageLocation"></span>
+                        </p>
+                        <p class="text-muted">
+                            <i class="bi bi-calendar me-1"></i>
+                            <span id="modalImageDate"></span>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -57,10 +81,20 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const modalImage = document.getElementById('modalImage');
+            const modalImageTitle = document.getElementById('modalImageTitle');
+            const modalImageLocation = document.getElementById('modalImageLocation');
+            const modalImageDate = document.getElementById('modalImageDate');
 
             document.querySelectorAll('[data-bs-toggle="modal"]').forEach(img => {
                 img.addEventListener('click', function () {
+                    // Bildquelle setzen
                     modalImage.src = this.getAttribute('data-image-src');
+                    modalImage.alt = this.getAttribute('data-image-title');
+                    
+                    // Bildinformationen setzen
+                    modalImageTitle.textContent = this.getAttribute('data-image-title');
+                    modalImageLocation.textContent = this.getAttribute('data-image-location');
+                    modalImageDate.textContent = this.getAttribute('data-image-date');
                 });
             });
         });

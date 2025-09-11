@@ -14,8 +14,8 @@ class GpsTracking {
     }
 
     init() {
-        // Buttons standardmäßig aktivieren
-        this.enableButtons();
+        // Buttons standardmäßig deaktivieren
+        this.disableButtons();
         
         // Prüfe GPS-Verfügbarkeit beim Laden der Seite
         this.checkGpsAvailability();
@@ -48,7 +48,7 @@ class GpsTracking {
     async checkGpsAvailability() {
         if (!navigator.geolocation) {
             this.updateGpsStatus('GPS nicht unterstützt', 'danger');
-            this.enableButtons(); // Buttons trotzdem aktivieren
+            this.disableButtons(); // Buttons deaktivieren wenn kein GPS
             return false;
         }
 
@@ -59,8 +59,8 @@ class GpsTracking {
             this.enableButtons();
             return true;
         } catch (error) {
-            this.updateGpsStatus('GPS nicht verfügbar - Buttons aktiv', 'warning');
-            this.enableButtons(); // Buttons trotzdem aktivieren
+            this.updateGpsStatus('GPS nicht verfügbar', 'warning');
+            this.disableButtons(); // Buttons deaktivieren wenn kein GPS
             return false;
         }
     }
@@ -90,9 +90,14 @@ class GpsTracking {
                 this.updateButtons();
                 this.updateGpsStatus('Begehung aktiv', 'success');
                 this.startTrackInterval();
+            } else {
+                // Keine aktive Begehung - Buttons basierend auf GPS-Status setzen
+                this.updateButtons();
             }
         } catch (error) {
             console.error('Fehler beim Prüfen der aktiven Begehung:', error);
+            // Bei Fehler Buttons basierend auf GPS-Status setzen
+            this.updateButtons();
         }
     }
 
@@ -225,6 +230,7 @@ class GpsTracking {
 
         if (startBtn && stopBtn) {
             if (this.isTracking) {
+                // Begehung läuft - Start deaktiviert, Stop aktiviert
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
                 startBtn.classList.remove('btn-success');
@@ -232,10 +238,19 @@ class GpsTracking {
                 stopBtn.classList.remove('btn-outline-danger');
                 stopBtn.classList.add('btn-danger');
             } else {
-                startBtn.disabled = false;
+                // Keine Begehung - Buttons basierend auf GPS-Status
+                const gpsAvailable = this.isGpsAvailable();
+                startBtn.disabled = !gpsAvailable;
                 stopBtn.disabled = true;
-                startBtn.classList.remove('btn-outline-success');
-                startBtn.classList.add('btn-success');
+                
+                if (gpsAvailable) {
+                    startBtn.classList.remove('btn-outline-success');
+                    startBtn.classList.add('btn-success');
+                } else {
+                    startBtn.classList.remove('btn-success');
+                    startBtn.classList.add('btn-outline-success');
+                }
+                
                 stopBtn.classList.remove('btn-danger');
                 stopBtn.classList.add('btn-outline-danger');
             }
@@ -246,9 +261,11 @@ class GpsTracking {
         const startBtn = document.getElementById('gps-start-btn');
         const stopBtn = document.getElementById('gps-stop-btn');
         
+        // Start-Button nur aktivieren wenn GPS verfügbar und nicht bereits getrackt wird
         if (startBtn && !this.isTracking) {
             startBtn.disabled = false;
         }
+        // Stop-Button nur aktivieren wenn bereits getrackt wird
         if (stopBtn && this.isTracking) {
             stopBtn.disabled = false;
         }
@@ -262,11 +279,33 @@ class GpsTracking {
         if (stopBtn) stopBtn.disabled = true;
     }
 
+    isGpsAvailable() {
+        // Prüfe ob GPS verfügbar ist basierend auf dem Status-Element
+        const statusElement = document.getElementById('gps-status');
+        if (statusElement) {
+            return statusElement.classList.contains('gps-available');
+        }
+        return false;
+    }
+
     updateGpsStatus(message, type) {
         const statusElement = document.getElementById('gps-status');
         if (statusElement) {
-            statusElement.textContent = message;
-            statusElement.className = `badge bg-${type}`;
+            // Entferne alle Status-Klassen
+            statusElement.classList.remove('gps-unavailable', 'gps-available');
+            
+            // Setze die entsprechende Icon-Klasse basierend auf dem Typ
+            if (type === 'success') {
+                statusElement.classList.add('gps-available');
+            } else {
+                statusElement.classList.add('gps-unavailable');
+            }
+            
+            // Setze den Tooltip-Text
+            statusElement.title = message;
+            
+            // Aktualisiere Buttons basierend auf GPS-Status
+            this.updateButtons();
         }
     }
 

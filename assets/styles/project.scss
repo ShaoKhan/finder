@@ -1,0 +1,93 @@
+// Project Styles
+.project {
+  // Form Styles
+  .needs-validation {
+    .form-text {
+      font-size: 0.875rem;
+      color: #6c757d;
+    }
+
+    .mb-3 {
+      margin-bottom: 1rem;
+    }
+
+    .mb-4 {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  // Card Styles
+  .card {
+    .card-header {
+      h1 {
+        &.h3 {
+          font-size: 1.75rem;
+          margin-bottom: 0;
+
+          i {
+            margin-right: 0.5rem;
+          }
+        }
+      }
+    }
+
+    .card-body {
+      .d-flex {
+        &.justify-content-between {
+          justify-content: space-between;
+        }
+      }
+    }
+  }
+
+  // Button Styles
+  .btn {
+    i {
+      margin-right: 0.5rem;
+    }
+  }
+
+  // PDF Report Styles
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    margin: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f2f2f2;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  #map {
+    height: 400px;
+    width: 100%;
+    margin: 20px 0;
+    border: 1px solid #ccc;
+  }
+
+  .map-image {
+    width: 100%;
+    height: 400px;
+  }
+}

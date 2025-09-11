@@ -4,76 +4,10 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <style>
-        .begehung-card {
-            transition: transform 0.2s;
-        }
-        .begehung-card:hover {
-            transform: translateY(-2px);
-        }
-        .begehung-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .stat-item {
-            text-align: center;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        .stat-value {
-            font-weight: bold;
-            color: #007bff;
-        }
-        .stat-label {
-            font-size: 0.8em;
-            color: #6c757d;
-        }
-        .active-badge {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        /* Modal-Styling */
-        .modal-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .modal-title {
-            color: #495057;
-            font-weight: 600;
-        }
-
-        .modal-footer {
-            background-color: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .begehung-info h6 {
-            color: #495057;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .begehung-info li {
-            margin-bottom: 0.25rem;
-        }
-
-        .begehung-info li:last-child {
-            margin-bottom: 0;
-        }
-    </style>
 {% endblock %}
 
 {% block body %}
-<div class="container mt-4">
+<div class="container mt-4 gps-tracking">
     <div class="row">
         <div class="col-3">
             <h2>Begehungen</h2>

@@ -3,7 +3,7 @@
 {% block title %}Changelog{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
+    <div class="container mt-4 founds">
         <h1 class="mb-4">Changelog</h1>
         
         {% for date, dayCommits in commits %}
@@ -37,30 +37,4 @@
         {% endfor %}
     </div>
 
-    <style>
-        .timeline {
-            position: relative;
-        }
-        
-        .commit-item {
-            position: relative;
-            padding-left: 0;
-        }
-        
-        .commit-badge {
-            font-size: 0.8em;
-        }
-        
-        .commit-message {
-            font-size: 1em;
-        }
-        
-        .commit-author {
-            font-size: 0.9em;
-        }
-        
-        .commit-time {
-            font-size: 0.9em;
-        }
-    </style>
 {% endblock %} 

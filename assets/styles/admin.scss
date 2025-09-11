@@ -1,0 +1,191 @@
+// Admin Dashboard Styles
+.admin {
+  // Border Left Colors
+  .border-left-primary {
+    border-left: .25rem solid #4e73df !important;
+  }
+
+  .border-left-success {
+    border-left: .25rem solid #1cc88a !important;
+  }
+
+  .border-left-info {
+    border-left: .25rem solid #36b9cc !important;
+  }
+
+  .border-left-warning {
+    border-left: .25rem solid #f6c23e !important;
+  }
+
+  // Text Colors
+  .text-gray-800 {
+    color: #5a5c69 !important;
+  }
+
+  // Badge Styles
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+
+    &.badge-success {
+      background-color: #198754;
+      color: white;
+    }
+
+    &.badge-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+  }
+
+  // List Group Styles
+  .list-group-item {
+    border-left: none;
+    border-right: none;
+
+    &:first-child {
+      border-top: none;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  // Hover Effects for Clickable Cards
+  a .card {
+    transition: transform 0.2s ease-in-out;
+
+    &:hover {
+      transform: translateY(-5px);
+    }
+  }
+
+  a:hover .card.border-left-primary {
+    box-shadow: 0 .5rem 1rem rgba(78, 115, 223, .25) !important;
+  }
+
+  a:hover .card.border-left-success {
+    box-shadow: 0 .5rem 1rem rgba(28, 200, 138, .25) !important;
+  }
+
+  // Admin Finds Styles
+  .thumbnail {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .modal-image {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .user-section {
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .find-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: white;
+  }
+
+  .image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 1rem;
+  }
+
+  .badge-public {
+    background-color: #198754;
+    color: white;
+  }
+
+  .badge-private {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+  }
+
+  .finds-count {
+    background-color: #0d6efd;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .date-accordion {
+    .accordion-button {
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      background-color: #f8f9fa;
+    }
+
+    .accordion-body {
+      padding: 1rem;
+      background-color: white;
+    }
+  }
+
+  .date-count {
+    background-color: #6c757d;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  // Admin Users Styles
+  .form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+    cursor: pointer;
+  }
+
+  .user-roles {
+    list-style: none;
+    padding-left: 0;
+
+    li {
+      display: inline-block;
+      margin-right: 0.5em;
+      padding: 0.2em 0.6em;
+      background-color: #e9ecef;
+      border-radius: 0.25rem;
+      font-size: 0.875em;
+    }
+  }
+
+  .role-admin {
+    background-color: #dc3545 !important;
+    color: white;
+  }
+
+  .role-moderator {
+    background-color: #ffc107 !important;
+    color: black;
+  }
+
+  .role-user {
+    background-color: #0d6efd !important;
+    color: white;
+  }
+}

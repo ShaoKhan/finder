@@ -3,7 +3,7 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
+    <div class="container mt-4 admin">
         <h1 class="mb-4">Admin Dashboard</h1>
 
         <!-- Statistik-Karten -->
@@ -187,70 +187,4 @@
         </div>
     </div>
 
-    <style>
-        .border-left-primary {
-            border-left: .25rem solid #4e73df!important;
-        }
-
-        .border-left-success {
-            border-left: .25rem solid #1cc88a!important;
-        }
-
-        .border-left-info {
-            border-left: .25rem solid #36b9cc!important;
-        }
-
-        .border-left-warning {
-            border-left: .25rem solid #f6c23e!important;
-        }
-
-        .text-gray-800 {
-            color: #5a5c69!important;
-        }
-
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-        }
-
-        .badge-success {
-            background-color: #198754;
-            color: white;
-        }
-
-        .badge-danger {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        .list-group-item {
-            border-left: none;
-            border-right: none;
-        }
-
-        .list-group-item:first-child {
-            border-top: none;
-        }
-
-        .list-group-item:last-child {
-            border-bottom: none;
-        }
-
-        /* Hover-Effekte nur für klickbare Kacheln */
-        a .card {
-            transition: transform 0.2s ease-in-out;
-        }
-
-        a:hover .card {
-            transform: translateY(-5px);
-        }
-
-        a:hover .card.border-left-primary {
-            box-shadow: 0 .5rem 1rem rgba(78,115,223,.25)!important;
-        }
-
-        a:hover .card.border-left-success {
-            box-shadow: 0 .5rem 1rem rgba(28,200,138,.25)!important;
-        }
-    </style>
 {% endblock %} 

@@ -1,0 +1,135 @@
+// GPS Tracking Styles
+.gps-tracking {
+  // Use primary font for all text
+  font-family: $font-primary;
+  // Map Container
+  #map {
+    height: 700px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  // Track Info Section
+  .track-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+
+    h4 {
+      margin-bottom: 1rem;
+      @include font-secondary(bold);
+    }
+
+    p {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  // Map Container
+  .map-container {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 10px;
+  }
+
+  // Map Controls
+  .map-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    min-height: 700px;
+  }
+
+  // Track Statistics
+  .track-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: 10px;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      color: #6c757d;
+      margin-top: 5px;
+    }
+  }
+
+  // History Page Styles
+  .begehung-card {
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  .begehung-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .active-badge {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+
+  // Modal Styles
+  .modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+
+    .modal-title {
+      color: #495057;
+      font-weight: 600;
+    }
+  }
+
+  .modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+  }
+
+  .begehung-info {
+    h6 {
+      color: #495057;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    li {
+      margin-bottom: 0.25rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
